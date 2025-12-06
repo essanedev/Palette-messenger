@@ -1,0 +1,140 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: radial-gradient(circle at 10% 20%, #f5f7fb 0, #e9eef8 30%, #e5ecff 60%, #f7f9ff 100%);
+  color: #0f172a;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.auth {
+  width: min(440px, 100%);
+}
+
+.auth-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 28px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+  display: grid;
+  gap: 20px;
+}
+
+.brand {
+  font-size: 26px;
+  font-weight: 800;
+  text-align: center;
+  color: #5d5fef;
+  letter-spacing: 0.5px;
+}
+
+.switcher {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 8px;
+  background: #f1f5f9;
+  border-radius: 12px;
+}
+
+.tab {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-weight: 700;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+.tab:hover {
+  transform: translateY(-1px);
+}
+
+.tab.active {
+  background: linear-gradient(135deg, #5d5fef, #7c3aed);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(93, 95, 239, 0.25);
+}
+
+.form {
+  display: grid;
+  gap: 14px;
+}
+
+.form.hidden {
+  display: none;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field span {
+  font-size: 14px;
+  color: #334155;
+  font-weight: 600;
+}
+
+.field input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field input:focus {
+  border-color: #5d5fef;
+  box-shadow: 0 0 0 3px rgba(93, 95, 239, 0.15);
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.primary {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #5d5fef, #7c3aed);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(93, 95, 239, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.primary:hover {
+  transform: translateY(-1px);
+}
+
+.primary:active {
+  transform: translateY(0);
+}
+
+.link {
+  font-weight: 600;
+  color: #5d5fef;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+

@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Palette — вход</title>
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body>
+  <main class="auth">
+    <div class="auth-card">
+      <div class="brand">Palette</div>
+      <div class="switcher">
+        <button class="tab active" data-target="login">Вход</button>
+        <button class="tab" data-target="signup" onclick="window.location.href='{% url 'users:register' %}'">Регистрация</button>
+      </div>
+
+      <form class="form" method="post">
+        {% csrf_token %}
+
+        {% if form.errors %}
+          <div style="background: #fee2e2; padding: 12px; border-radius: 10px; color: #991b1b; font-weight: 600;">
+            Неверное имя пользователя или пароль
+          </div>
+        {% endif %}
+
+        <label class="field">
+          <span>Имя пользователя</span>
+          {{ form.username }}
+        </label>
+        <label class="field">
+          <span>Пароль</span>
+          {{ form.password }}
+        </label>
+        <div class="actions">
+          <button type="submit" class="primary">Войти</button>
+          <a href="{% url 'users:register' %}" class="link">Нет аккаунта?</a>
+        </div>
+      </form>
+    </div>
+  </main>
+</body>
+</html>

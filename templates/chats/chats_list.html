@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Мои чаты — Palette{% endblock %}
+
+{% block content %}
+<div class="layout">
+  <aside class="sidebar">
+    <div class="search">
+      <input type="text" placeholder="Поиск" id="search-input">
+    </div>
+
+    <div class="contact-list">
+      {% if chats %}
+        {% for chat in chats %}
+        {% with unread=chat.unread_count %}  <!-- ИСПРАВЛЕНО: убрали |default:0 -->
+        <a href="{% url 'chats:detail' chat.id %}" class="contact" style="text-decoration: none; color: inherit; position: relative;">
+          <div class="contact-body">
+            <div class="contact-name" style="{% if unread > 0 %}font-weight: 800;{% endif %}">
+              {{ chat }}
+            </div>
+            <div class="contact-preview">
+              {% with last_msg=chat.get_last_message %}
+                {% if last_msg %}{{ last_msg.content|truncatewords:5 }}{% else %}Нет сообщений{% endif %}
+              {% endwith %}
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+            <div class="contact-time">{{ chat.updated_at|date:"H:i" }}</div>
+            {% if unread > 0 %}
+              <span style="background: #ef4444; color: white; border-radius: 12px; padding: 2px 8px; font-size: 11px; font-weight: 700;">
+                {{ unread }}
+              </span>
+            {% endif %}
+          </div>
+        </a>
+        {% endwith %}
+        {% endfor %}
+      {% else %}
+        <div class="contact placeholder">
+          <div class="contact-body">
+            <div class="contact-name">Список пуст</div>
+            <div class="contact-preview">Здесь появятся ваши чаты</div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </aside>
+
+  <main class="chat">
+    <div class="messages empty">
+      <div class="empty-hint">Выберите чат чтобы начать общение</div>
+    </div>
+  </main>
+</div>
+
+<div class="center-panel" id="center-panel">
+  <div class="panel-card">
+    <button class="panel-close" aria-label="Закрыть">✕</button>
+
+    <section class="panel-section hidden" data-section="profile">
+      <h3>Профиль</h3>
+      <div class="panel-profile">
+        <div class="panel-avatar">{{ user.username|first|upper }}</div>
+        <div class="panel-info">
+          <div class="panel-name">{{ user.username }}</div>
+          <div class="panel-email">{{ user.email }}</div>
+        </div>
+      </div>
+      <a href="{% url 'users:profile_edit' %}" class="secondary" style="text-decoration: none; text-align: center; display: block;">Редактировать</a>
+    </section>
+
+    <section class="panel-section hidden" data-section="group">
+      <h3>Создать группу</h3>
+      <form class="panel-form" method="post" action="{% url 'chats:create_group' %}">
+        {% csrf_token %}
+        <label>
+          <span>Название группы</span>
+          <input type="text" name="name" placeholder="Например, Проект А" required>
+        </label>
+        <label>
+          <span>Описание</span>
+          <textarea name="description" placeholder="Описание группы..."></textarea>
+        </label>
+        <label>
+          <span>Участники</span>
+          <div class="panel-list selectable" id="group-contacts-list">
+            {% if user.contacts.all %}
+              {% for contact in user.contacts.all %}
+              <label class="panel-list-item">
+                <input type="checkbox" name="members" value="{{ contact.contact.id }}">
+                <span>{{ contact.contact.username }}</span>
+              </label>
+              {% endfor %}
+            {% else %}
+              <div class="panel-list-empty">Нет доступных контактов</div>
+            {% endif %}
+          </div>
+        </label>
+        <button type="submit" class="primary">Создать</button>
+      </form>
+    </section>
+  </div>
+</div>
+
+<script>
+  const searchInput = document.getElementById('search-input');
+  const contacts = document.querySelectorAll('.contact:not(.placeholder)');
+
+  searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase();
+    contacts.forEach(contact => {
+      const name = contact.querySelector('.contact-name').textContent.toLowerCase();
+      contact.style.display = name.includes(query) ? '' : 'none';
+    });
+  });
+
+  const settingsButtons = document.querySelectorAll('.settings-item[data-section]');
+  const centerPanel = document.getElementById('center-panel');
+  const panelSections = document.querySelectorAll('.panel-section');
+  const panelClose = document.querySelector('.panel-close');
+
+  const openPanel = (section) => {
+    panelSections.forEach((node) => {
+      node.classList.toggle('hidden', node.dataset.section !== section);
+    });
+    centerPanel.classList.add('open');
+    document.querySelector('.settings-menu').classList.remove('open');
+  };
+
+  settingsButtons.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openPanel(btn.dataset.section);
+    });
+  });
+
+  if (panelClose) {
+    panelClose.addEventListener('click', () => centerPanel.classList.remove('open'));
+  }
+
+  centerPanel.addEventListener('click', (e) => {
+    if (e.target === centerPanel) centerPanel.classList.remove('open');
+  });
+</script>
+{% endblock %}

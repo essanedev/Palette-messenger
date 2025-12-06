@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Создать группу{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="card-title mb-4">Создать группу</h3>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label">Название группы</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Описание</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Участники</label>
+                        {% if contacts %}
+                            {% for contact in contacts %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="members" value="{{ contact.contact.id }}" id="member{{ contact.contact.id }}">
+                                <label class="form-check-label" for="member{{ contact.contact.id }}">
+                                    {{ contact.contact.username }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">У вас пока нет контактов</p>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Создать группу</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

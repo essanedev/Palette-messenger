@@ -1,0 +1,100 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Palette Messenger{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  {% if user.is_authenticated %}
+  <header class="topbar">
+    <button class="menu-toggle" aria-label="Открыть меню">=</button>
+    <div class="brand">Palette</div>
+    <div class="settings-menu" role="menu">
+      <div class="settings-user">
+        {% if user.avatar %}
+          <img src="{{ user.avatar.url }}" alt="Аватар" class="settings-avatar">
+        {% else %}
+          <div class="settings-avatar" style="display: grid; place-items: center; background: linear-gradient(135deg, #5d5fef, #7c3aed); color: white; font-size: 48px; font-weight: 800;">
+            {{ user.username|first|upper }}
+          </div>
+        {% endif %}
+        <div class="settings-username">{{ user.username }}</div>
+      </div>
+
+      <a href="{% url 'users:profile' user.username %}" class="settings-item" role="menuitem" style="text-decoration: none; display: block;">Профиль</a>
+      <a href="{% url 'users:search' %}" class="settings-item" role="menuitem" style="text-decoration: none; display: block;">Поиск людей</a>
+      <a href="{% url 'chats:search_groups' %}" class="settings-item" role="menuitem" style="text-decoration: none; display: block;">Поиск групп</a>
+      <a href="{% url 'chats:create_group' %}" class="settings-item" role="menuitem" style="text-decoration: none; display: block;">Создать группу</a>
+      <a href="{% url 'users:contacts' %}" class="settings-item" role="menuitem" style="text-decoration: none; display: block;">Контакты</a>
+
+      <label class="settings-item toggle" role="menuitem">
+        <input type="checkbox" id="theme-toggle">
+        Тёмная тема
+      </label>
+
+      <a href="{% url 'users:logout' %}" class="settings-item" style="text-decoration: none; display: block; background: #fee; color: #c00;">Выход</a>
+    </div>
+  </header>
+  {% endif %}
+
+  <div id="notifications-container" style="position: fixed; top: 80px; right: 20px; z-index: 100; max-width: 400px; display: flex; flex-direction: column; gap: 10px;">
+    {% if messages %}
+      {% for message in messages %}
+      <div class="notification alert-{{ message.tags }}" style="background: {% if message.tags == 'success' %}#d1fae5{% elif message.tags == 'error' %}#fee2e2{% else %}#dbeafe{% endif %}; padding: 12px 40px 12px 16px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative; animation: slideIn 0.3s ease;">
+        {{ message }}
+        <button onclick="this.parentElement.remove()" style="position: absolute; top: 8px; right: 8px; background:none; border:none; font-size:18px; cursor:pointer; color:#64748b;">x</button>
+      </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <style>
+    @keyframes slideIn { from {opacity:0; transform:translateX(100%)} to {opacity:1; transform:translateX(0)} }
+    @keyframes slideOut { to {opacity:0; transform:translateX(100%)} }
+    .notification.removing { animation: slideOut 0.3s ease forwards; }
+  </style>
+
+  {% block content %}{% endblock %}
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.notification').forEach((n, i) => {
+        if (i >= 2) n.remove();
+        else setTimeout(() => {
+          n.classList.add('removing');
+          setTimeout(() => n.remove(), 300);
+        }, 3000);
+      });
+    });
+
+    const menuToggle = document.querySelector('.menu-toggle');
+    const settingsMenu = document.querySelector('.settings-menu');
+    const themeToggle = document.getElementById('theme-toggle');
+
+    if (menuToggle && settingsMenu) {
+      const close = () => settingsMenu.classList.remove('open');
+
+      menuToggle.onclick = e => { e.stopPropagation(); settingsMenu.classList.toggle('open'); };
+      document.onclick = e => { if (!settingsMenu.contains(e.target) && e.target !== menuToggle) close(); };
+      settingsMenu.querySelectorAll('a[href]').forEach(a => a.onclick = close);
+    }
+
+    if (themeToggle) {
+      if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark');
+        themeToggle.checked = true;
+      }
+      themeToggle.onchange = e => {
+        document.body.classList.toggle('dark', e.target.checked);
+        localStorage.setItem('theme', e.target.checked ? 'dark' : 'light');
+      };
+    }
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

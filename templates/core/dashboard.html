@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Главная - Palette Messenger{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <h2>Добро пожаловать, {{ user.username }}!</h2>
+                <p class="text-muted">Начните общаться прямо сейчас</p>
+
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <a href="{% url 'users:search' %}" class="btn btn-success w-100 mb-3">
+                            Найти людей
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'chats:list' %}" class="btn btn-primary w-100 mb-3">
+                            Мои чаты
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'users:contacts' %}" class="btn btn-outline-primary w-100 mb-3">
+                            Контакты
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'users:profile' user.username %}" class="btn btn-outline-primary w-100 mb-3">
+                            Профиль
+                        </a>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h5>Быстрые действия</h5>
+                                <div class="d-grid gap-2 mt-3">
+                                    <a href="{% url 'chats:create_group' %}" class="btn btn-outline-primary">
+                                        Создать группу
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h5>Помощь</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

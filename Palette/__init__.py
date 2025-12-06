@@ -1,3 +1,1 @@
-"""
-Package for Palette.
-"""
+from .settings.base import *

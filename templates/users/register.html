@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Palette — регистрация</title>
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body>
+  <main class="auth">
+    <div class="auth-card">
+      <div class="brand">Palette</div>
+      <div class="switcher">
+        <button class="tab" data-target="login" onclick="window.location.href='{% url 'users:login' %}'">Вход</button>
+        <button class="tab active" data-target="signup">Регистрация</button>
+      </div>
+
+      <form class="form" method="post">
+        {% csrf_token %}
+
+        {% if form.errors %}
+          <div style="background: #fee2e2; padding: 12px; border-radius: 10px; color: #991b1b; font-weight: 600;">
+            {% for field, errors in form.errors.items %}
+              {% for error in errors %}
+                {{ error }}<br>
+              {% endfor %}
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <label class="field">
+          <span>Имя пользователя</span>
+          {{ form.username }}
+        </label>
+        <label class="field">
+          <span>Email</span>
+          {{ form.email }}
+        </label>
+        <label class="field">
+          <span>Пароль</span>
+          {{ form.password1 }}
+        </label>
+        <label class="field">
+          <span>Подтвердите пароль</span>
+          {{ form.password2 }}
+        </label>
+        <div class="actions">
+          <button type="submit" class="primary">Регистрация</button>
+          <a href="{% url 'users:login' %}" class="link">Уже есть аккаунт?</a>
+        </div>
+      </form>
+    </div>
+  </main>
+</body>
+</html>
