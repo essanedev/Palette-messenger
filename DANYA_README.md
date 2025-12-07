@@ -17,3 +17,33 @@ DB_PORT=5432
 
 
 `python -m daphne -b 127.0.0.1 -p 8000 Palette.asgi:application`
+
+Для дебаг запуска использовать комманду сверху /\
+Для деплоя docker compose
+
+.env теперь выглядит вот так:
+
+SECRET_KEY=z(98@e6)n@o(1)2e(ts-a2w^r48q-qvp=vrc-w&b4y7h$o+wb!
+DJANGO_ENVIRONMENT=production
+
+CSRF_TRUSTED_ORIGINS = ['https://messengerpalette.ru/']
+ALLOWED_HOSTS = ['31.57.26.182', 'localhost', '127.0.0.1', '0.0.0.0']
+
+DB_NAME=palette_messenger
+DB_USER=postgres
+DB_PASSWORD=475PzuSvqa6u
+DB_HOST=localhost
+DB_PORT=5432
+
+# Database settings
+DATABASE_ENGINE=postgresql_psycopg2
+DATABASE_NAME=palette_messenger
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=475PzuSvqa6u
+DATABASE_HOST=db
+DATABASE_PORT=5432
+
+# Postgrtes container settings
+POSTGRES_DB=palette_messenger
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=475PzuSvqa6u

@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:17
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+
+  palette:
+    build: .
+    container_name: palette-messenger
+    depends_on:
+      - db
+    volumes:
+      - ./static:/palette-messenger/static
+      - ./staticfiles:/palette-messenger/staticfiles
+    env_file:
+      - .env
+    environment:
+      - DJANGO_ENVIRONMENT=production
+      - PORT=8001
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=palette_messenger
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+volumes:
+  postgres_data:
