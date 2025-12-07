@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Найти знакомства — Palette{% endblock %}
+
+{% block content %}
+<div class="layout">
+  <aside class="sidebar">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0;">
+      <h3 style="font-weight: 800; margin: 0;">Найти знакомства</h3>
+      <button class="secondary" data-section="group" style="padding: 8px 12px; font-size: 12px;">+ Группа</button>
+    </div>
+
+    <form method="get" style="margin-bottom: 16px;">
+      <div class="search">
+        <input type="text" name="q" placeholder="Поиск..." value="{{ query }}" autofocus>
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <button type="submit" name="type" value="users" class="secondary" style="flex: 1; {% if search_type == 'users' or not search_type %}background: var(--brand-color, #5d5fef); color: white;{% endif %}">
+          👥 Люди
+        </button>
+        <button type="submit" name="type" value="groups" class="secondary" style="flex: 1; {% if search_type == 'groups' %}background: var(--brand-color, #5d5fef); color: white;{% endif %}">
+          👨‍👩‍👧‍👦 Группы
+        </button>
+      </div>
+    </form>
+
+    <div class="contact-list">
+      {% if query %}
+        {% if search_type == 'groups' %}
+          <!-- Поиск групп -->
+          {% if groups_results %}
+            {% for chat in groups_results %}
+            <div class="contact">
+              <div class="contact-body">
+                <div class="contact-name">{{ chat.name }}</div>
+                <div class="contact-preview">{{ chat.description|truncatewords:10 }}</div>
+                <small style="color: #94a3b8;">Участников: {{ chat.members.count }}</small>
+              </div>
+              <div>
+                <a href="{% url 'chats:join_group' chat.id %}" class="primary" style="text-decoration: none; font-size: 11px; padding: 6px 10px; background: var(--brand-color, #5d5fef); color: white; border-radius: 8px;">Войти</a>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="contact placeholder">
+              <div class="contact-body">
+                <div class="contact-name">Группы не найдены</div>
+                <div class="contact-preview">Попробуйте другой запрос</div>
+              </div>
+            </div>
+          {% endif %}
+        {% else %}
+          <!-- Поиск людей -->
+          {% if users_results %}
+            {% for user in users_results %}
+            <div class="contact">
+              <div class="contact-body">
+                <div class="contact-name">
+                  {{ user.username }}
+                  {% if user.is_online %}
+                    <span style="color: #10b981; font-size: 12px;">●</span>
+                  {% else %}
+                    <span style="color: #94a3b8; font-size: 12px;">○</span>
+                  {% endif %}
+                </div>
+                <div class="contact-preview">
+                  {% if user.full_name %}{{ user.full_name }}{% else %}{{ user.email }}{% endif %}
+                </div>
+              </div>
+              <div style="display: flex; gap: 4px; flex-direction: column;">
+                <a href="{% url 'users:add_contact' user.username %}" class="secondary" style="text-decoration: none; font-size: 11px; padding: 6px 10px; text-align: center;">+ Добавить</a>
+                <a href="{% url 'chats:create_private' user.username %}" class="primary" style="text-decoration: none; font-size: 11px; padding: 6px 10px; background: var(--brand-color, #5d5fef); color: white; border-radius: 8px; text-align: center;">💬</a>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="contact placeholder">
+              <div class="contact-body">
+                <div class="contact-name">Пользователи не найдены</div>
+                <div class="contact-preview">Попробуйте другой запрос</div>
+              </div>
+            </div>
+          {% endif %}
+        {% endif %}
+      {% else %}
+        <div class="contact placeholder">
+          <div class="contact-body">
+            <div class="contact-name">Введите запрос</div>
+            <div class="contact-preview">Найдите людей или группы</div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </aside>
+
+  <main class="chat">
+    <div class="messages empty">
+      <div class="empty-hint">
+        Найдите интересных людей или присоединитесь к группам!
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Панель создания группы -->
+<div class="center-panel" id="center-panel">
+  <div class="panel-card">
+    <button class="panel-close" aria-label="Закрыть">✕</button>
+
+    <section class="panel-section hidden" data-section="group">
+      <h3>Создать группу</h3>
+      <form class="panel-form" method="post" action="{% url 'chats:create_group' %}">
+        {% csrf_token %}
+        <label>
+          <span>Название группы</span>
+          <input type="text" name="name" placeholder="Например, Проект А" required>
+        </label>
+        <label>
+          <span>Описание</span>
+          <textarea name="description" placeholder="Описание группы..."></textarea>
+        </label>
+        <label>
+          <span>Участники (опционально)</span>
+          <div class="panel-list selectable" id="group-contacts-list">
+            {% if user.contacts.all %}
+              {% for contact in user.contacts.all %}
+              <label class="panel-list-item">
+                <input type="checkbox" name="members" value="{{ contact.contact.id }}">
+                <span>{{ contact.contact.username }}</span>
+              </label>
+              {% endfor %}
+            {% else %}
+              <div class="panel-list-empty">Нет доступных контактов. Можно создать пустую группу.</div>
+            {% endif %}
+          </div>
+        </label>
+        <button type="submit" class="primary">Создать</button>
+      </form>
+    </section>
+  </div>
+</div>
+
+<script>
+  const settingsButtons = document.querySelectorAll('[data-section]');
+  const centerPanel = document.getElementById('center-panel');
+  const panelSections = document.querySelectorAll('.panel-section');
+  const panelClose = document.querySelector('.panel-close');
+
+  const openPanel = (section) => {
+    panelSections.forEach((node) => {
+      node.classList.toggle('hidden', node.dataset.section !== section);
+    });
+    centerPanel.classList.add('open');
+  };
+
+  settingsButtons.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openPanel(btn.dataset.section);
+    });
+  });
+
+  if (panelClose) {
+    panelClose.addEventListener('click', () => centerPanel.classList.remove('open'));
+  }
+
+  centerPanel.addEventListener('click', (e) => {
+    if (e.target === centerPanel) centerPanel.classList.remove('open');
+  });
+</script>
+{% endblock %}

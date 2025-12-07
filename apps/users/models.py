@@ -1,3 +1,5 @@
+from django.utils import timezone
+from datetime import timedelta
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from apps.core.models import TimeStampedModel
@@ -9,7 +11,7 @@ class User(AbstractUser):
     bio = models.TextField('О себе', max_length=500, blank=True)
     phone = models.CharField('Телефон', max_length=20, blank=True)
     is_online = models.BooleanField('Онлайн', default=False)
-    last_seen = models.DateTimeField('Последний визит', null=True, blank=True)
+    last_seen = models.DateTimeField('Последний визит', null=True, blank=True) ### пока не работает
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email']
@@ -26,6 +28,10 @@ class User(AbstractUser):
     def full_name(self):
         return f"{self.first_name} {self.last_name}".strip() or self.username
 
+    def is_really_online(self):
+        if not self.last_seen:
+            return False
+        return timezone.now() - self.last_seen < timedelta(minutes=5)
 
 class UserContact(TimeStampedModel):
     owner = models.ForeignKey(

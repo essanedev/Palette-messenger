@@ -34,6 +34,8 @@ def login_view(request):
             user = form.get_user()
             login(request, user)
             user.is_online = True
+            from django.utils import timezone
+            user.last_seen = timezone.now()
             user.save()
             return redirect('core:dashboard')
     else:
@@ -45,11 +47,45 @@ def login_view(request):
 @login_required
 def logout_view(request):
     request.user.is_online = False
+    from django.utils import timezone
+    request.user.last_seen = timezone.now()
     request.user.save()
     logout(request)
     messages.info(request, 'Вы вышли из системы')
     return redirect('users:login')
 
+
+@login_required
+def discover(request):
+    query = request.GET.get('q', '').strip()
+    search_type = request.GET.get('type', 'users')
+
+    users_results = []
+    groups_results = []
+
+    if query:
+        if search_type == 'users':
+            users_results = User.objects.filter(
+                Q(username__icontains=query) |
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query)
+            ).exclude(id=request.user.id).exclude(
+                id__in=request.user.contacts.values_list('contact_id', flat=True)
+            )[:20]
+        else:
+            from apps.chats.models import Chat
+            groups_results = Chat.objects.filter(
+                chat_type='group',
+                name__icontains=query
+            ).exclude(members=request.user)[:20]
+
+    context = {
+        'query': query,
+        'search_type': search_type,
+        'users_results': users_results,
+        'groups_results': groups_results,
+    }
+    return render(request, 'users/discover.html', context)
 
 @login_required
 def profile_view(request, username):
