@@ -23,9 +23,11 @@ RUN useradd -m -r palette-user && \
    mkdir /palette-messenger && \
    chown -R palette-user /palette-messenger
 
-# Ensure logs directory exists and is writable by the application user
+# Ensure logs directory exists and static folders are writable by the application user
 RUN mkdir -p /palette-messenger/logs && \
-   chown -R palette-user:palette-user /palette-messenger/logs
+   chown -R palette-user:palette-user /palette-messenger/logs && \
+   chown -R palette-user:palette-user /palette-messenger/staticfiles && \
+   chown -R palette-user:palette-user /palette-messenger/static
  
 # Copy the Python dependencies from the builder stage
 COPY --from=builder /usr/local/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages/
