@@ -10,8 +10,18 @@ else
 	PORT=${PORT:-8000}
 fi
 
-mkdir -p ./logs
-python manage.py collectstatic --noinput
-python manage.py migrate --noinput
+	# Ensure necessary directories exist and are writable. When
+	# `./static` and `./staticfiles` are bind-mounted from the host they
+	# may be owned by a different user; run permissive chmod/chown so
+	# `collectstatic` can write into them. Running as root in the
+	# container allows these operations.
+	mkdir -p ./logs ./static ./staticfiles
+	# Make world-writable as a fallback so an unprivileged user can write.
+	chmod -R 0777 ./logs ./static ./staticfiles || true
+	# Attempt to chown to the application user if present (no-op if fails).
+	chown -R palette-user:palette-user ./logs ./static ./staticfiles 2>/dev/null || true
 
-python -m daphne -b 0.0.0.0 -p "$PORT" Palette.asgi:application
+	python manage.py collectstatic --noinput
+	python manage.py migrate --noinput
+
+	python -m daphne -b 0.0.0.0 -p "$PORT" Palette.asgi:application

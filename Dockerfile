@@ -42,8 +42,11 @@ COPY --chown=palette-user:palette-user . .
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1 
  
-# Switch to non-root user
-USER palette-user
+# NOTE: Keep the container running the entrypoint as root so the
+# entrypoint can adjust permissions on bind-mounted directories
+# (e.g. `./staticfiles`) before `collectstatic` runs. Running as
+# root in development images simplifies permission fixes for mounted
+# volumes. The entrypoint will set safe permissions as needed.
  
 # Expose the application port
 EXPOSE 8000 
