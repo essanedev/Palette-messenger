@@ -24,16 +24,10 @@ DB_PORT=5432
 .env теперь выглядит вот так:
 
 SECRET_KEY=z(98@e6)n@o(1)2e(ts-a2w^r48q-qvp=vrc-w&b4y7h$o+wb!
-DJANGO_ENVIRONMENT=production
+DJANGO_ENVIRONMENT=development
 
 CSRF_TRUSTED_ORIGINS = ['https://messengerpalette.ru/']
-ALLOWED_HOSTS = ['31.57.26.182', 'localhost', '127.0.0.1', '0.0.0.0']
-
-DB_NAME=palette_messenger
-DB_USER=postgres
-DB_PASSWORD=475PzuSvqa6u
-DB_HOST=localhost
-DB_PORT=5432
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '31.57.26.182', '0.0.0.0']
 
 # Database settings
 DATABASE_ENGINE=postgresql_psycopg2

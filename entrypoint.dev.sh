@@ -1,3 +1,5 @@
+#!/usr/bin/env sh
+
 set -e
 
 ENVIRONMENT=${DJANGO_ENVIRONMENT:-development}
@@ -8,6 +10,7 @@ else
 	PORT=${PORT:-8000}
 fi
 
+mkdir -p ./logs
 python manage.py collectstatic --noinput
 python manage.py migrate --noinput
 

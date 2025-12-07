@@ -18,14 +18,6 @@ services:
       - ./staticfiles:/palette-messenger/staticfiles
     env_file:
       - .env
-    environment:
-      - DJANGO_ENVIRONMENT=production
-      - PORT=8001
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_NAME=palette_messenger
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
     ports:
       - "8001:8001"
     restart: unless-stopped
