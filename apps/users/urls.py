@@ -14,4 +14,5 @@ urlpatterns = [
     path('contacts/block/<str:username>/', views.block_contact, name='block_contact'),
     path('profile/<str:username>/', views.profile_view, name='profile'),
     path('profile-edit/', views.profile_edit, name='profile_edit'),
+    path('discover/', views.discover, name='discover'),
 ]

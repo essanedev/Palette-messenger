@@ -3,6 +3,61 @@
 
 {% block title %}{{ chat }} — Palette{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* Фиксируем высоту области сообщений */
+  .chat {
+    max-height: calc(100vh - 100px);
+    overflow: hidden;
+  }
+
+  .messages {
+    max-height: calc(100vh - 320px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+  }
+
+  /* Стилизация скроллбара */
+  .messages::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .messages::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+  }
+
+  .messages::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+  }
+
+  .messages::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  body.dark .messages::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+
+  body.dark .messages::-webkit-scrollbar-thumb {
+    background: #2a2a2a;
+  }
+
+  body.dark .messages::-webkit-scrollbar-thumb:hover {
+    background: #3a3a3a;
+  }
+
+  /* Для мобильных устройств */
+  @media (max-width: 768px) {
+    .messages {
+      max-height: calc(100vh - 280px);
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="layout">
   <aside class="sidebar">
@@ -30,7 +85,7 @@
         <div class="contact-body">
           <div class="contact-name">{{ member.username }}</div>
           <div class="contact-preview">
-            {% if member.is_online %}
+            {% if member.is_really_online %}
               <span style="color: #10b981;">● Онлайн</span>
             {% else %}
               <span style="color: #94a3b8;">○ Оффлайн</span>
@@ -112,6 +167,10 @@
   const fileInput = document.getElementById('file-input');
   const recordingIndicator = document.getElementById('recording-indicator');
   const recordingTime = document.getElementById('recording-time');
+
+  const scrollToBottom = () => {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  };
 
   // WebSocket
   const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -234,7 +293,7 @@
         video: voiceBtn.dataset.mode === 'video'
       };
 
-      console.log('🎤 Запрос доступа к медиа:', constraints);
+      console.log('Запрос доступа к медиа:', constraints);
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
       const mimeType = voiceBtn.dataset.mode === 'video' ? 'video/webm' : 'audio/webm';
@@ -251,7 +310,6 @@
         const blob = new Blob(recordedChunks, { type: mimeType });
         console.log('Запись остановлена. Размер:', blob.size, 'байт');
 
-        // Здесь отправка на сервер (пока просто показываем)
         alert(`Записано ${voiceBtn.dataset.mode === 'video' ? 'видео' : 'аудио'}: ${(blob.size / 1024).toFixed(2)} KB.
 
 Пока тут заглушка, потом добавим`);
@@ -326,7 +384,7 @@
 
   // +++++++++++++ ПРИКРЕПЛЕНИЕ ФАЙЛОВ ока не работает++++++++++++
   attachBtn.addEventListener('click', () => {
-    console.log('📎 Клик по кнопке прикрепления');
+    console.log('Клик по кнопке прикрепления');
     fileInput.click();
   });
 
