@@ -1,6 +1,4 @@
 from .base import *
-import dj_database_url
-
 
 DEBUG = False
 
@@ -9,7 +7,17 @@ CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS').split()
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS').split()
 
 DATABASES = {
-    'default': dj_database_url.config(os.environ.get('DATABASE_URL'))
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DATABASE_NAME'),
+        'USER': os.environ.get('DATABASE_USERNAME'),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
+        'HOST': os.environ.get('DATABASE_HOST'),
+        'PORT': os.environ.get('DATABASE_PORT'),
+        'OPTIONS': {
+            'options': '-c client_encoding=UTF8'
+        },
+    }
 }
 
 # When the SecurityMiddleware is enabled and the SECURE_SSL_REDIRECT setting is set to True in a Django application, the middleware automatically redirects all incoming HTTP requests to HTTPS.
