@@ -25,7 +25,8 @@ services:
       dockerfile: ./docker/prod/nginx/Dockerfile
     container_name: palette-nginx
     ports:
-      - "8001:80"
+      - 8001
+      - 80
     volumes:
       - ./nginx/conf:/docker/prod/nginx/django_nginx.conf
       - ./static:/static
