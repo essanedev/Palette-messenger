@@ -6,6 +6,7 @@ services:
     volumes:
       - ./static:/palette-messenger/static
       - ./staticfiles:/palette-messenger/staticfiles
+      - ./media:/palette-messenger/media
     env_file:
       - .env
     ports:
