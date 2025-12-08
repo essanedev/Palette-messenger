@@ -12,8 +12,6 @@ services:
       - .env
     ports:
       - "8001:8001"
-    networks:
-      - node-network
     restart: unless-stopped
 
   nginx:
@@ -23,8 +21,6 @@ services:
     container_name: palette-nginx
     ports:
       - "8080:80"
-    networks:
-      - node-network
     volumes:
       - ./static:/static
       - ./staticfiles:/staticfiles
