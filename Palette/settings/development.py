@@ -3,12 +3,8 @@ import os
 
 DEBUG = True
 
-CSRF_TRUSTED_ORIGINS = os.environ.get(
-    'CSRF_TRUSTED_ORIGINS',
-    'http://localhost:8000,http://127.0.0.1:8000'
-).split(',')
-
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'f7c284ec11ed.ngrok-free.app').split()
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 
 DATABASES = {
     'default': {
