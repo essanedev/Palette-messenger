@@ -48,9 +48,8 @@ ENV PYTHONUNBUFFERED=1
 # volumes. The entrypoint will set safe permissions as needed.
  
 # Expose the application port
-EXPOSE 8000
+EXPOSE 80
 EXPOSE 8001
-EXPOSE 443
 
 # Make entry file executable
 RUN chmod +x  /palette-messenger/entrypoint.dev.sh
