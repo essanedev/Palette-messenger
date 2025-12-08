@@ -1,5 +1,12 @@
+version: '3.8'
+
 volumes:
   postgres_data:
+
+networks:
+  app_net:
+    driver: bridge
+
 services:
   palette:
     build: .
@@ -14,7 +21,7 @@ services:
       - "8001:8001"
     restart: unless-stopped
     networks:
-      default:
+      app_net:
         aliases:
           - palette-messenger
 
@@ -32,3 +39,5 @@ services:
     depends_on:
       - palette
     restart: unless-stopped
+    networks:
+      - app_net
