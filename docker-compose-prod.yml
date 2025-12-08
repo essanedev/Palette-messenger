@@ -31,9 +31,10 @@ services:
     ports:
       - "8001:80"
     volumes:
-      - ./static:/static
-      - ./staticfiles:/staticfiles
-      - ./media:/media
+        ./nginx/conf:/docker/prod/nginx/django_nginx.conf:ro
+      - ./static:/static:ro
+      - ./staticfiles:/staticfiles:ro
+      - ./media:/media:ro
     env_file:
       - .env
     depends_on:
