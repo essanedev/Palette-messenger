@@ -3,10 +3,6 @@ version: '3.8'
 volumes:
   postgres_data:
 
-networks:
-  app_net:
-    driver: bridge
-
 services:
   palette:
     build: .
@@ -40,5 +36,3 @@ services:
     depends_on:
       - palette
     restart: unless-stopped
-    networks:
-      - app_net
