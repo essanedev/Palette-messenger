@@ -48,7 +48,7 @@ ENV PYTHONUNBUFFERED=1
 # volumes. The entrypoint will set safe permissions as needed.
  
 # Expose the application port
-EXPOSE 80
+EXPOSE 8080
 EXPOSE 8001
 
 # Make entry file executable

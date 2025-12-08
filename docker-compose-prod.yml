@@ -20,7 +20,7 @@ services:
       dockerfile: ./docker/prod/nginx/Dockerfile
     container_name: palette-nginx
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       - ./static:/static
       - ./staticfiles:/staticfiles
