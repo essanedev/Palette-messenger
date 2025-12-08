@@ -1,16 +1,18 @@
 version: '3.8'
 
 volumes:
-  postgres_data:
+  static-data:
+  staticfiles-data:
+  media-data:
 
 services:
   palette:
     build: .
     container_name: palette-messenger
     volumes:
-      - ./static:/palette-messenger/static
-      - ./staticfiles:/palette-messenger/staticfiles
-      - ./media:/palette-messenger/media
+      - static-data:/palette-messenger/static
+      - staticfiles-data:/palette-messenger/staticfiles
+      - media-data:/palette-messenger/media
     env_file:
       - .env
     restart: unless-stopped
@@ -27,10 +29,10 @@ services:
     ports:
       - '8001:80'
     volumes:
-      - ./nginx/conf:/docker/prod/nginx/django_nginx.conf
-      - ./static:/palette-messenger/static
-      - ./staticfiles:/palette-messenger/staticfiles
-      - ./media:/palette-messenger/media
+#      - ./nginx/conf:/docker/prod/nginx/django_nginx.conf
+      - static-data:/palette-messenger/static
+      - staticfiles-data:/palette-messenger/staticfiles
+      - media-data:/palette-messenger/media
     env_file:
       - .env
     depends_on:
