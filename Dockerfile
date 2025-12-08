@@ -23,10 +23,9 @@ RUN useradd -m -r palette-user && \
    mkdir /palette-messenger && \
    chown -R palette-user /palette-messenger
 
-# Ensure logs and static directories exist and are writable by the application user.
-# Create directories before chown to avoid failures when source folders are copied later.
-RUN mkdir -p /palette-messenger/logs /palette-messenger/static /palette-messenger/staticfiles && \
-   chown -R palette-user:palette-user /palette-messenger/logs /palette-messenger/static /palette-messenger/staticfiles
+# Ensure logs, media and static directories exist and are writable by the application user.
+RUN mkdir -p /palette-messenger/logs /palette-messenger/static /palette-messenger/staticfiles /palette-messenger/media && \
+   chown -R palette-user:palette-user /palette-messenger/logs /palette-messenger/static /palette-messenger/staticfiles /palette-messenger/media
  
 # Copy the Python dependencies from the builder stage
 COPY --from=builder /usr/local/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages/
@@ -49,7 +48,9 @@ ENV PYTHONUNBUFFERED=1
 # volumes. The entrypoint will set safe permissions as needed.
  
 # Expose the application port
-EXPOSE 8000 
+EXPOSE 8000
+EXPOSE 8001
+EXPOSE 443
 
 # Make entry file executable
 RUN chmod +x  /palette-messenger/entrypoint.dev.sh

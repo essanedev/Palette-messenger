@@ -6,7 +6,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     env_file:
-      - .env
+      - .env.dev
 
   palette:
     build: .
@@ -17,7 +17,7 @@ services:
       - ./static:/palette-messenger/static
       - ./staticfiles:/palette-messenger/staticfiles
     env_file:
-      - .env
+      - .env.dev
     ports:
       - "8001:8000"
     restart: unless-stopped
