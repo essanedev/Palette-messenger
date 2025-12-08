@@ -17,8 +17,6 @@ services:
       - ./media:/palette-messenger/media
     env_file:
       - .env
-    ports:
-      - "8001:8001"
     restart: unless-stopped
     networks:
       app_net:
@@ -31,11 +29,13 @@ services:
       dockerfile: ./docker/prod/nginx/Dockerfile
     container_name: palette-nginx
     ports:
-      - "8080:80"
+      - "8001:80"
     volumes:
       - ./static:/static
       - ./staticfiles:/staticfiles
       - ./media:/media
+    env_file:
+      - .env
     depends_on:
       - palette
     restart: unless-stopped

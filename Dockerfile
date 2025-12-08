@@ -49,7 +49,6 @@ ENV PYTHONUNBUFFERED=1
  
 # Expose the application port
 EXPOSE 8080
-EXPOSE 8001
 
 # Make entry file executable
 RUN chmod +x  /palette-messenger/entrypoint.prod.sh
