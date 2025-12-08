@@ -6,7 +6,6 @@ volumes:
 services:
   palette:
     build: .
-    container_name: palette-messenger
     volumes:
       - static-data:/static
       - staticfiles-data:/staticfiles
@@ -19,11 +18,9 @@ services:
     build:
       context: .
       dockerfile: ./docker/prod/nginx/Dockerfile
-    container_name: palette-nginx
     ports:
       - '8001:80'
     volumes:
-#      - ./nginx/conf:/docker/prod/nginx/django_nginx.conf
       - static-data:/static
       - staticfiles-data:/staticfiles
       - media-data:/media
