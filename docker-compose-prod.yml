@@ -28,9 +28,9 @@ services:
       - '8001:80'
     volumes:
       - ./nginx/conf:/docker/prod/nginx/django_nginx.conf
-      - ./static:/static
-      - ./staticfiles:/staticfiles
-      - ./media:/media
+      - ./static:/palette-messenger/static
+      - ./staticfiles:/palette-messenger/staticfiles
+      - ./media:/palette-messenger/media
     env_file:
       - .env
     depends_on:
