@@ -52,7 +52,7 @@ EXPOSE 8080
 EXPOSE 8001
 
 # Make entry file executable
-RUN chmod +x  /palette-messenger/entrypoint.dev.sh
+RUN chmod +x  /palette-messenger/entrypoint.prod.sh
  
 # Start the application using Gunicorn
-CMD ["/palette-messenger/entrypoint.dev.sh"]
+CMD ["/palette-messenger/entrypoint.prod.sh"]
