@@ -1,0 +1,30 @@
+volumes:
+  static-data:
+  staticfiles-data:
+  media-data:
+
+services:
+  palette:
+    build: .
+    volumes:
+      - static-data:/static
+      - staticfiles-data:/staticfiles
+      - media-data:/media
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: .
+      dockerfile: ./docker/prod/nginx/Dockerfile
+    ports:
+      - 8001
+      - 80
+    volumes:
+      - static-data:/static
+      - staticfiles-data:/staticfiles
+      - media-data:/media
+    depends_on:
+      - palette
+    restart: unless-stopped
