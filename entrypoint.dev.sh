@@ -15,11 +15,11 @@ fi
 	# may be owned by a different user; run permissive chmod/chown so
 	# `collectstatic` can write into them. Running as root in the
 	# container allows these operations.
-	mkdir -p ./logs ./static ./staticfiles
+	mkdir -p ./logs ./static ./staticfiles ./media
 	# Make world-writable as a fallback so an unprivileged user can write.
-	chmod -R 0777 ./logs ./static ./staticfiles || true
+	chmod -R 0777 ./logs ./static ./staticfiles ./media || true
 	# Attempt to chown to the application user if present (no-op if fails).
-	chown -R palette-user:palette-user ./logs ./static ./staticfiles 2>/dev/null || true
+	chown -R palette-user:palette-user ./logs ./static ./staticfiles ./media 2>/dev/null || true
 
 	python manage.py collectstatic --noinput
 	python manage.py migrate --noinput
