@@ -1,5 +1,5 @@
-FROM nginx:latest
+FROM nginx:alpine
 
-RUN rm -f /etc/nginx/conf.d/default.conf
+COPY docker/prod/nginx/nginx.conf /etc/nginx/conf.d/default.conf
 
-COPY ./docker/prod/nginx/django_nginx.conf /etc/nginx/conf.d/
+EXPOSE 80

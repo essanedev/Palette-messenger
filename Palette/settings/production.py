@@ -20,8 +20,6 @@ DATABASES = {
     }
 }
 
-# When the SecurityMiddleware is enabled and the SECURE_SSL_REDIRECT setting is set to True in a Django application, the middleware automatically redirects all incoming HTTP requests to HTTPS.
-# Until you have HTTPS set up, keep this False
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
@@ -46,3 +44,6 @@ EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+
+STATIC_ROOT = '/staticfiles'
+MEDIA_ROOT = '/media'

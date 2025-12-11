@@ -11,6 +11,7 @@ services:
   palette:
     build: .
     container_name: palette-messenger
+    command: /palette-messenger/entrypoint.dev.sh
     depends_on:
       - db
     volumes:

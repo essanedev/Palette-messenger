@@ -1,58 +1,37 @@
-# Stage 1: Base build stage
 FROM python:3.13-slim AS builder
  
-# Create the app directory
 RUN mkdir /palette-messenger
- 
-# Set the working directory
 WORKDIR /palette-messenger
- 
-# Set environment variables to optimize Python
+
 ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1 
- 
-# Install dependencies first for caching benefit
-RUN pip install --upgrade pip 
-COPY requirements.txt /palette-messenger/ 
+ENV PYTHONUNBUFFERED=1
+
+RUN pip install --upgrade pip
+COPY requirements.txt /palette-messenger/
 RUN pip install --no-cache-dir -r requirements.txt
- 
-# Stage 2: Production stage
+
 FROM python:3.13-slim
- 
+
 RUN useradd -m -r palette-user && \
    mkdir /palette-messenger && \
    chown -R palette-user /palette-messenger
 
-# Ensure logs, media and static directories exist and are writable by the application user.
 RUN mkdir -p /palette-messenger/logs /palette-messenger/static /palette-messenger/staticfiles /palette-messenger/media && \
    chown -R palette-user:palette-user /palette-messenger/logs /palette-messenger/static /palette-messenger/staticfiles /palette-messenger/media
- 
-# Copy the Python dependencies from the builder stage
+
 COPY --from=builder /usr/local/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages/
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
- 
-# Set the working directory
+
 WORKDIR /palette-messenger
- 
-# Copy application code
+
 COPY --chown=palette-user:palette-user . .
- 
-# Set environment variables to optimize Python
+
 ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1 
- 
-# NOTE: Keep the container running the entrypoint as root so the
-# entrypoint can adjust permissions on bind-mounted directories
-# (e.g. `./staticfiles`) before `collectstatic` runs. Running as
-# root in development images simplifies permission fixes for mounted
-# volumes. The entrypoint will set safe permissions as needed.
- 
-# Expose the application port
-EXPOSE 8080
+ENV PYTHONUNBUFFERED=1
+
+EXPOSE 8000
 EXPOSE 8001
 
-# Make entry file executable
-RUN chmod +x  /palette-messenger/entrypoint.prod.sh
- 
-# Start the application using Gunicorn
+RUN chmod +x /palette-messenger/entrypoint.prod.sh /palette-messenger/entrypoint.dev.sh
+
 CMD ["/palette-messenger/entrypoint.prod.sh"]
