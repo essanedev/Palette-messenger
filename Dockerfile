@@ -32,6 +32,6 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 EXPOSE 8001
 
-RUN chmod +x /palette-messenger/entrypoint.prod.sh /palette-messenger/entrypoint.dev.sh
+RUN chmod +x /palette-messenger/entrypoint.prod.sh /palette-messenger/entrypoint.prod.sh
 
 CMD ["/palette-messenger/entrypoint.prod.sh"]
