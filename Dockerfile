@@ -17,6 +17,7 @@ RUN useradd -m -r palette-user && \
    chown -R palette-user /palette-messenger
 
 RUN mkdir -p /palette-messenger/logs /palette-messenger/static /palette-messenger/staticfiles /palette-messenger/media && \
+   chmod -R 0777 /palette-messenger/logs /palette-messenger/static /palette-messenger/staticfiles /palette-messenger/media || true && \
    chown -R palette-user:palette-user /palette-messenger/logs /palette-messenger/static /palette-messenger/staticfiles /palette-messenger/media
 
 COPY --from=builder /usr/local/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages/
@@ -25,6 +26,9 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 WORKDIR /palette-messenger
 
 COPY --chown=palette-user:palette-user . .
+
+RUN python manage.py collectstatic --noinput
+RUN python manage.py migrate --noinput
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
