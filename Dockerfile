@@ -28,7 +28,6 @@ WORKDIR /palette-messenger
 COPY --chown=palette-user:palette-user . .
 
 RUN python manage.py collectstatic --noinput
-RUN python manage.py migrate --noinput
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
