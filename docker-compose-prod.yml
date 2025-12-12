@@ -1,6 +1,5 @@
 volumes:
   static-data:
-  staticfiles-data:
   media-data:
 
 services:
@@ -8,7 +7,6 @@ services:
     build: .
     volumes:
       - static-data:/static
-      - staticfiles-data:/staticfiles
       - media-data:/media
     env_file:
       - .env
