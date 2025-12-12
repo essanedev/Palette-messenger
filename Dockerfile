@@ -34,4 +34,6 @@ EXPOSE 8001
 
 RUN chmod +x /palette-messenger/entrypoint.prod.sh /palette-messenger/entrypoint.prod.sh
 
+USER palette-user
+
 CMD ["/palette-messenger/entrypoint.prod.sh"]
