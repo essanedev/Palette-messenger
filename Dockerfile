@@ -16,9 +16,9 @@ RUN useradd -m -r palette-user && \
    mkdir /palette-messenger && \
    chown -R palette-user /palette-messenger
 
-RUN mkdir -p /palette-messenger/logs && \
-   chmod -R 0777 /palette-messenger/logs /palette-messenger/static /palette-messenger/staticfiles /palette-messenger/media || true && \
-   chown -R palette-user:palette-user /palette-messenger/logs /palette-messenger/static /palette-messenger/staticfiles /palette-messenger/media
+# RUN mkdir -p /palette-messenger/logs /palette-messenger/static /palette-messenger/staticfiles /palette-messenger/media && \
+#   chmod -R 0777 /palette-messenger/logs /palette-messenger/static /palette-messenger/staticfiles /palette-messenger/media || true && \
+#   chown -R palette-user:palette-user /palette-messenger/logs /palette-messenger/static /palette-messenger/staticfiles /palette-messenger/media
 
 COPY --from=builder /usr/local/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages/
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
