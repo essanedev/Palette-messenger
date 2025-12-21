@@ -14,5 +14,5 @@ jobs:
         uses: qbix-tech/dokploy-deploy-action@v1
         with:
           dokploy_url: https://dokploy.messengerpalette.ru
-          api_key: ${{ secrets.DOKPLOY_API_KEY }}
+          api_key: ${{ secrets.DOKPLOY_AUTH_TOKEN }}
           application_id: ${{ secrets.DOKPLOY_APPLICATION_ID }}
