@@ -4,6 +4,10 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+LOG_DIR = os.path.join(BASE_DIR, 'logs')
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
+
 load_dotenv(BASE_DIR / '.env.development', override=True)
 load_dotenv(BASE_DIR / '.env.production', override=True)
 # load_dotenv()
