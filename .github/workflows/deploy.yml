@@ -2,8 +2,9 @@ name: Dokploy Deployment Workflow
 
 on:
   workflow_run:
-    workflows: [Django CI, Pylint]
-    types: [completed]
+    workflows: ["Django CI", "Pylint"]
+    types: 
+      - completed
     branches: [main]
 
 jobs:
