@@ -7,7 +7,7 @@ on:
     branches: [ "main", "deploy-test" ]
 
 env:
-  env_var: ${{ vars.ENV_CONTEXT_VAR }}
+  DATABASE_URL: ${{ env.DATABASE_URL }}
 
 jobs:
   build:
