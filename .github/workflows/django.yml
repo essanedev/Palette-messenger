@@ -7,7 +7,7 @@ on:
     branches: [ "main", "deploy-test" ]
 
 env:
-  DATABASE_URL: ${{ env.DATABASE_URL }}
+  DATABASE_URL: ${{ venv.DATABASE_URL }}
 
 jobs:
   build:
