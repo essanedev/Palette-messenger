@@ -8,6 +8,10 @@ on:
 
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  CORS_ALLOWED_ORIGINS: ${{ env.DATABASE_URL }}
+  CSRF_TRUSTED_ORIGINS: ${{ env.DATABASE_URL }}
+  LLOWED_HOSTS: ${{ env.DATABASE_URL }}
+  
 
 jobs:
   build:
