@@ -1,2 +1,0 @@
-- name: Dokploy Deployment
-  uses: benbristow/dokploy-deploy-action@0.2.0
