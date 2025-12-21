@@ -6,13 +6,10 @@ on:
     types: [completed]
     branches: [main]
 
-env:
-  api_key: ${{ secrets.DOKPLOY_AUTH_TOKEN }}
-  application_id: ${{ secrets.DOKPLOY_APPLICATION_ID }}  
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: venv
     steps:
       - name: Deploy App to Dokploy
         uses: qbix-tech/dokploy-deploy-action@v1
