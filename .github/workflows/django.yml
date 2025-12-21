@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ "main", "deploy-test" ]
 
+env:
+  env_var: ${{ vars.ENV_CONTEXT_VAR }}
+
 jobs:
   build:
 
