@@ -1,8 +1,8 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
-    <Name>palette</Name>
-    <RootNamespace>palette</RootNamespace>
+    <Name>Palette</Name>
+    <RootNamespace>Palette</RootNamespace>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -15,7 +15,7 @@
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <LaunchProvider>Django launcher</LaunchProvider>
-    <DjangoSettingsModule>palette.settings</DjangoSettingsModule>
+    <DjangoSettingsModule>Palette.settings</DjangoSettingsModule>
     <WebBrowserUrl>http://localhost</WebBrowserUrl>
     <OutputPath>.</OutputPath>
     <SuppressCollectPythonCloudServiceFiles>true</SuppressCollectPythonCloudServiceFiles>
@@ -30,10 +30,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="manage.py" />
-    <Compile Include="palette\__init__.py" />
-    <Compile Include="palette\settings.py" />
-    <Compile Include="palette\urls.py" />
-    <Compile Include="palette\wsgi.py" />
+    <Compile Include="Palette\__init__.py" />
+    <Compile Include="Palette\settings.py" />
+    <Compile Include="Palette\urls.py" />
+    <Compile Include="Palette\wsgi.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="requirements.txt" />
