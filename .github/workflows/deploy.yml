@@ -13,6 +13,6 @@ jobs:
       - name: Deploy App to Dokploy
         uses: qbix-tech/dokploy-deploy-action@v1
         with:
-          dokploy_url: ${{ secrets.DOKPLOY_URL }}
+          dokploy_url: ${{ env.DOKPLOY_URL }}
           api_key: ${{ secrets.DOKPLOY_API_KEY }}
           application_id: ${{ secrets.DOKPLOY_APPLICATION_ID }}
