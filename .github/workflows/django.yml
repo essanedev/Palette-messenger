@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ "main", "deploy-test" ]
 
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
 jobs:
   build:
 
