@@ -6,11 +6,6 @@ on:
     types: [completed]
     branches: [main]
 
-env:
-  api_token: ${{ secrets.API_TOKEN }}
-  application_id: ${{ secrets.APPLICATION_ID }}
-  dokploy_url: ${{ secrets.DOKPLOY_URL }}
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
