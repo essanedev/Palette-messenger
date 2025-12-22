@@ -1,10 +1,13 @@
 name: Continuous Deployment Workflow
 
 on:
+  push:
+    branches:
+      - main
   workflow_run:
     workflows: ["Continuous Integration Workflow"]
     types: [completed]
-
+  
 jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.event == 'push' }}
