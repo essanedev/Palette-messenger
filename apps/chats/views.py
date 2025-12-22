@@ -2,8 +2,16 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count, Max, F
 from django.contrib import messages as django_messages
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 from .models import Chat, Message, ChatMembership
+from .utils import compress_image, validate_file_size, get_file_type, get_readable_size
 from apps.users.models import User
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -13,12 +21,13 @@ def chats_list(request):
     ).order_by('-last_message_time')
 
     for chat in user_chats:
-        chat.unread_count = chat.get_unread_count(request.user)  # ИСПРАВЛЕНО!
+        chat.unread_count = chat.get_unread_count(request.user)
 
     context = {
         'chats': user_chats,
     }
     return render(request, 'chats/chats_list.html', context)
+
 
 @login_required
 def chat_detail(request, chat_id):
@@ -112,7 +121,6 @@ def create_group_chat(request):
 
 @login_required
 def search_groups(request):
-    """Поиск групповых чатов"""
     query = request.GET.get('q', '').strip()
     results = []
 
@@ -131,15 +139,12 @@ def search_groups(request):
 
 @login_required
 def join_group(request, chat_id):
-    """Присоединиться к группе"""
     chat = get_object_or_404(Chat, id=chat_id, chat_type='group')
 
-    # Проверяем, не является ли уже участником
     if chat.members.filter(id=request.user.id).exists():
         django_messages.info(request, 'Вы уже участник этой группы')
         return redirect('chats:detail', chat_id=chat.id)
 
-    # Добавляем пользователя
     ChatMembership.objects.create(chat=chat, user=request.user)
     django_messages.success(request, f'Вы присоединились к группе "{chat.name}"')
     return redirect('chats:detail', chat_id=chat.id)
@@ -147,10 +152,8 @@ def join_group(request, chat_id):
 
 @login_required
 def add_member_to_group(request, chat_id):
-    """Добавить участника в группу (только для админов)"""
     chat = get_object_or_404(Chat, id=chat_id, chat_type='group')
 
-    # Проверка что пользователь - админ
     membership = ChatMembership.objects.filter(chat=chat, user=request.user).first()
     if not membership or membership.role != 'admin':
         django_messages.error(request, 'Только администраторы могут добавлять участников')
@@ -170,3 +173,171 @@ def add_member_to_group(request, chat_id):
             django_messages.error(request, 'Пользователь не найден')
 
     return redirect('chats:detail', chat_id=chat.id)
+
+
+@login_required
+@require_POST
+def upload_file(request, chat_id):
+    chat = get_object_or_404(Chat, id=chat_id)
+
+    if not chat.members.filter(id=request.user.id).exists():
+        return JsonResponse({'error': 'Нет доступа к этому чату'}, status=403)
+
+    if 'file' not in request.FILES:
+        return JsonResponse({'error': 'Файл не найден'}, status=400)
+
+    file = request.FILES['file']
+    original_size = file.size
+    file_type = get_file_type(file.name)
+
+    logger.info(f"Загрузка файла: {file.name} ({get_readable_size(original_size)}) от {request.user.username}")
+
+    if file_type == 'image':
+        valid, error_msg = validate_file_size(file, 15)  # 15MB для фото
+        if not valid:
+            logger.warning(f"Файл отклонен (размер): {error_msg}")
+            return JsonResponse({'error': error_msg}, status=400)
+
+        try:
+            file = compress_image(file, max_size_mb=15, quality=85)
+            logger.info(f"✓ Изображение сжато: {get_readable_size(file.size)}")
+        except Exception as e:
+            logger.error(f"Ошибка сжатия изображения: {e}")
+            return JsonResponse({'error': 'Ошибка обработки изображения'}, status=500)
+
+        message_type = 'image'
+
+    elif file_type == 'video':
+        valid, error_msg = validate_file_size(file, 100)  # 100MB для видео
+        if not valid:
+            logger.warning(f"Видео отклонено (размер): {error_msg}")
+            return JsonResponse({'error': error_msg}, status=400)
+        message_type = 'file'
+        logger.info(f"Видео принято: {get_readable_size(file.size)}")
+
+    elif file_type == 'voice':
+        valid, error_msg = validate_file_size(file, 10)  # 10MB для аудио
+        if not valid:
+            logger.warning(f"Аудио отклонено (размер): {error_msg}")
+            return JsonResponse({'error': error_msg}, status=400)
+        message_type = 'voice'
+
+    else:
+        valid, error_msg = validate_file_size(file, 50)  # 50MB для других файлов
+        if not valid:
+            logger.warning(f"Файл отклонен (размер): {error_msg}")
+            return JsonResponse({'error': error_msg}, status=400)
+        message_type = 'file'
+
+    try:
+        message = Message.objects.create(
+            chat=chat,
+            sender=request.user,
+            message_type=message_type,
+            file=file,
+            content=f"Отправил(а) {file.name}"
+        )
+        logger.info(f"Файл сохранен в БД: message_id={message.id}")
+    except Exception as e:
+        logger.error(f"Ошибка сохранения сообщения: {e}")
+        return JsonResponse({'error': 'Ошибка сохранения файла'}, status=500)
+
+    try:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'chat_{chat_id}',
+            {
+                'type': 'chat_message',
+                'message': {
+                    'id': message.id,
+                    'sender': message.sender.username,
+                    'content': message.content,
+                    'file_url': message.file.url if message.file else None,
+                    'message_type': message.message_type,
+                    'created_at': message.created_at.isoformat(),
+                }
+            }
+        )
+    except Exception as e:
+        logger.error(f"Ошибка отправки через WebSocket: {e}")
+
+    return JsonResponse({
+        'success': True,
+        'message': {
+            'id': message.id,
+            'sender': message.sender.username,
+            'content': message.content,
+            'file_url': message.file.url if message.file else None,
+            'message_type': message.message_type,
+            'created_at': message.created_at.isoformat(),
+        }
+    })
+
+
+@login_required
+@require_POST
+def upload_voice(request, chat_id):
+    chat = get_object_or_404(Chat, id=chat_id)
+
+    if not chat.members.filter(id=request.user.id).exists():
+        return JsonResponse({'error': 'Нет доступа к этому чату'}, status=403)
+
+    if 'audio' not in request.FILES:
+        return JsonResponse({'error': 'Аудио файл не найден'}, status=400)
+
+    audio_file = request.FILES['audio']
+    is_video = request.POST.get('is_video', 'false') == 'true'
+
+    original_size = audio_file.size
+    logger.info(
+        f"Загрузка {'видео' if is_video else 'аудио'}сообщения: {get_readable_size(original_size)} от {request.user.username}")
+
+    max_size = 50 if is_video else 10  # 50MB для видео, 10MB для аудио
+    valid, error_msg = validate_file_size(audio_file, max_size)
+    if not valid:
+        logger.warning(f"Голосовое сообщение отклонено: {error_msg}")
+        return JsonResponse({'error': error_msg}, status=400)
+
+    try:
+        message = Message.objects.create(
+            chat=chat,
+            sender=request.user,
+            message_type='voice',
+            file=audio_file,
+            content=f"{'Видео' if is_video else 'Голосовое'} сообщение"
+        )
+        logger.info(f"Голосовое сообщение сохранено: message_id={message.id}")
+    except Exception as e:
+        logger.error(f"Ошибка сохранения голосового сообщения: {e}")
+        return JsonResponse({'error': 'Ошибка сохранения аудио'}, status=500)
+
+    try:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'chat_{chat_id}',
+            {
+                'type': 'chat_message',
+                'message': {
+                    'id': message.id,
+                    'sender': message.sender.username,
+                    'content': message.content,
+                    'file_url': message.file.url,
+                    'message_type': message.message_type,
+                    'created_at': message.created_at.isoformat(),
+                }
+            }
+        )
+    except Exception as e:
+        logger.error(f"Ошибка отправки через WebSocket: {e}")
+
+    return JsonResponse({
+        'success': True,
+        'message': {
+            'id': message.id,
+            'sender': message.sender.username,
+            'content': message.content,
+            'file_url': message.file.url,
+            'message_type': message.message_type,
+            'created_at': message.created_at.isoformat(),
+        }
+    })

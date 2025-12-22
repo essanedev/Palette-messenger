@@ -112,13 +112,20 @@ class Message(TimeStampedModel):
     is_edited = models.BooleanField('Отредактировано', default=False)
     is_deleted = models.BooleanField('Удалено', default=False)
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.sender.username}: {self.content[:50] if self.content else self.message_type}"
+
     class Meta:
         verbose_name = 'Сообщение'
         verbose_name_plural = 'Сообщения'
         ordering = ['created_at']
-
-    def __str__(self):
-        return f"{self.sender.username}: {self.content[:50]}"
+        indexes = [
+            models.Index(fields=['chat', 'created_at']),
+            models.Index(fields=['sender']),
+        ]
 
 
 class MessageReadStatus(TimeStampedModel):
