@@ -75,11 +75,45 @@ jobs:
       - name: Run all tests in parallel
         run: |
           python manage.py test --parallel --tag=unit --tag=integration
-          
-      - name: Run performance tests
-        run: |
-          python manage.py test --tag=performance
-  
+
+  performance_test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.13.3
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13.3'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install locust
+
+    - name: Run Django server in background
+      run: |
+        python manage.py migrate
+        python -m daphne -b 0.0.0.0 -p 8080 Palette.asgi:application &
+
+    - name: Run Locust performance test
+      run: |
+        locust -f locustfile.py --headless --users 10 --spawn-rate 1 --run-time 1m --host http://127.0.0.1:8080 --csv=results
+
+    - name: Upload performance test results as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: locust-results
+        path: results_*.csv
+
+  coverage_tests:
+    name: Test codebase for test coverage
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Run tests with coverage
         run: |
           coverage run manage.py test
