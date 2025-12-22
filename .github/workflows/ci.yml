@@ -76,6 +76,11 @@ jobs:
         run: |
           python manage.py test --parallel --tag=unit --tag=integration
 
+      - name: Test codebase for test coverage
+        run: |
+          coverage run manage.py test
+          coverage report --fail-under=80
+
   performance_test:
     runs-on: ubuntu-latest
 
@@ -104,17 +109,7 @@ jobs:
         locust -f locustfile.py --headless --users 10 --spawn-rate 1 --run-time 1m --host http://127.0.0.1:8080 --csv=results
 
     - name: Upload performance test results as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: locust-results
         path: results_*.csv
-
-  coverage_tests:
-    name: Test codebase for test coverage
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Run tests with coverage
-        run: |
-          coverage run manage.py test
-          coverage report --fail-under=80
