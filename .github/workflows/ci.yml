@@ -36,7 +36,7 @@ jobs:
           pylint $(git ls-files '*.py')
 
   tests:
-    name: Django tests (Python 3.13)
+    name: Django tests
     runs-on: ubuntu-latest
   
     steps:
