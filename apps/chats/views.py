@@ -28,7 +28,6 @@ def chats_list(request):
     }
     return render(request, 'chats/chats_list.html', context)
 
-
 @login_required
 def chat_detail(request, chat_id):
     chat = get_object_or_404(Chat, id=chat_id)

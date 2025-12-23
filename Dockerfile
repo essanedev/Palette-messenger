@@ -16,9 +16,6 @@ RUN useradd -m -r palette-user && \
    mkdir /palette-messenger && \
    chown -R palette-user /palette-messenger
 
-RUN mkdir -p /palette-messenger/logs /palette-messenger/static /palette-messenger/staticfiles /palette-messenger/media && \
-   chown -R palette-user:palette-user /palette-messenger/logs /palette-messenger/static /palette-messenger/staticfiles /palette-messenger/media
-
 COPY --from=builder /usr/local/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages/
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
 
@@ -32,6 +29,6 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 EXPOSE 8001
 
-RUN chmod +x /palette-messenger/entrypoint.prod.sh /palette-messenger/entrypoint.dev.sh
+RUN chmod +x /palette-messenger/entrypoint.prod.sh /palette-messenger/entrypoint.prod.sh
 
 CMD ["/palette-messenger/entrypoint.prod.sh"]

@@ -12,7 +12,7 @@ DATABASES = {
         'NAME': os.environ.get('DATABASE_NAME', 'palette_messenger'),
         'USER': os.environ.get('DATABASE_USERNAME', 'postgres'),
         'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'postgres'),
-        'HOST': os.environ.get('DATABASE_HOST', 'db'),
+        'HOST': os.environ.get('DATABASE_HOST', 'localhost'),
         'PORT': os.environ.get('DATABASE_PORT', '5432'),
         'OPTIONS': {
             'options': '-c client_encoding=UTF8'
