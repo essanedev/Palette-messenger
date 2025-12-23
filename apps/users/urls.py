@@ -15,4 +15,5 @@ urlpatterns = [
     path('profile/<str:username>/', views.profile_view, name='profile'),
     path('profile-edit/', views.profile_edit, name='profile_edit'),
     path('discover/', views.discover, name='discover'),
+    path('autocomplete/', views.autocomplete_users, name='autocomplete'),
 ]

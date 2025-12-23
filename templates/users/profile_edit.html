@@ -3,13 +3,13 @@
 {% block title %}Редактировать профиль{% endblock %}
 
 {% block content %}
-<div class="row">
+<div class="row profile-page-wrapper">
     <div class="col-md-6 offset-md-3">
         <div class="card shadow-sm">
-            <div class="card-body">
+            <div class="card-body text-center">
                 <h3 class="card-title mb-4">Редактировать профиль</h3>
 
-                <form method="post" enctype="multipart/form-data">
+                <form method="post" enctype="multipart/form-data" class="profile-edit-form">
                     {% csrf_token %}
 
                     <div class="mb-3">
@@ -40,6 +40,9 @@
                     <div class="mb-3">
                         <label class="form-label">Аватар</label>
                         {{ form.avatar }}
+                        <label for="{{ form.avatar.id_for_label }}" class="input-file-upload-button btn btn-primary w-100 mt-2">
+                            Выбрать файл
+                        </label>
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100">Сохранить</button>

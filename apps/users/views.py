@@ -198,3 +198,25 @@ def block_contact(request, username):
         messages.error(request, 'Контакт не найден')
 
     return redirect('users:contacts')
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+
+@require_GET
+@login_required
+def autocomplete_users(request):
+    q = request.GET.get('q', '').strip()
+    results = []
+    if q:
+        qs = User.objects.filter(
+            Q(username__icontains=q) |
+            Q(first_name__icontains=q) |
+            Q(last_name__icontains=q)
+        ).exclude(id=request.user.id)[:10]
+        for u in qs:
+            results.append({
+                'username': u.username,
+                'full_name': (u.get_full_name() or ''),
+                'avatar': (u.avatar.url if getattr(u, 'avatar', None) else '')
+            })
+    return JsonResponse({'results': results})
