@@ -9,7 +9,7 @@ if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
 
 load_dotenv(BASE_DIR / '.env.dev', override=True)
-# load_dotenv(BASE_DIR / '.env.prod', override=True)
+load_dotenv(BASE_DIR / '.env.prod', override=True)
 # load_dotenv()
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-this-in-production')
