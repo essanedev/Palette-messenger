@@ -1,0 +1,95 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Palette — вход</title>
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body>
+  <main class="auth">
+    <div class="auth-card">
+      <div class="brand">
+        <img src="{% static 'images/Palette.svg' %}" alt="Palette Logo" class="brand-logo">
+        Palette
+      </div>
+
+      <div class="switcher">
+        <button class="tab active" data-target="login">Вход</button>
+        <button class="tab" data-target="signup" onclick="window.location.href='{% url 'users:register' %}'">Регистрация</button>
+      </div>
+
+      <form class="form" method="post">
+        {% csrf_token %}
+
+        {% if form.errors %}
+          <div style="background: #fee2e2; padding: 12px; border-radius: 10px; color: #991b1b; font-weight: 600;">
+            Неверное имя пользователя или пароль
+          </div>
+        {% endif %}
+
+        <label class="field">
+          <span>Имя пользователя</span>
+          {{ form.username }}
+        </label>
+        <label class="field">
+          <span>Пароль</span>
+          {{ form.password }}
+        </label>
+        <div class="actions">
+          <button type="submit" class="primary">Войти</button>
+          <a href="{% url 'users:register' %}" class="link">Нет аккаунта?</a>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <div class="theme-toggle">
+    <button class="theme-switch" id="theme-switch" aria-label="Переключить тему">
+      <span class="theme-icon">🌙</span>
+    </button>
+  </div>
+
+  <script src="{% static 'css/auth.css' %}"></script>
+  <script>
+    const themeSwitch = document.getElementById('theme-switch');
+    const themeIcon = themeSwitch.querySelector('.theme-icon');
+    const body = document.body;
+
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    body.setAttribute('data-theme', savedTheme);
+    themeIcon.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
+    themeSwitch.addEventListener('click', () => {
+      const currentTheme = body.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      body.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    });
+
+    // Анимация лого
+    const brandLogo = document.querySelector('.brand-logo');
+    const root = document.documentElement;
+    const rainbowColors = ['#ff0000', '#ff8800', '#ffd700', '#1fa637', '#06b6d4', '#0053a2', '#cf18ff'];
+    let currentRotation = 0;
+    let colorIndex = 0;
+
+    setTimeout(() => {
+      currentRotation = 90;
+      brandLogo.style.transform = `rotate(${currentRotation}deg)`;
+      root.style.setProperty('--brand-color', rainbowColors[0]);
+      setTimeout(() => {
+        setInterval(() => {
+          currentRotation -= 360 / 7;
+          brandLogo.style.transform = `rotate(${currentRotation}deg)`;
+          colorIndex = (colorIndex + 1) % rainbowColors.length;
+          root.style.setProperty('--brand-color', rainbowColors[colorIndex]);
+        }, 5000);
+      }, 5000);
+    }, 15000);
+  </script>
+</body>
+</html>

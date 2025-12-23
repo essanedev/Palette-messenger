@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ profile_user.username }} - Профиль{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                {% if profile_user.avatar %}
+                    <img src="{{ profile_user.avatar.url }}" class="rounded-circle mb-3" width="150" height="150" alt="Avatar">
+                {% else %}
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 150px; height: 150px; font-size: 60px;">
+                        {{ profile_user.username|first|upper }}
+                    </div>
+                {% endif %}
+
+                <h2>{{ profile_user.username }}</h2>
+
+                {% if profile_user.is_online %}
+                    <span class="badge bg-success mb-2">онлайн</span>
+                {% else %}
+                    <span class="badge bg-secondary mb-2">оффлайн</span>
+                {% endif %}
+
+                {% if profile_user.full_name %}
+                    <p class="text-muted">{{ profile_user.full_name }}</p>
+                {% endif %}
+
+                {% if profile_user.email and profile_user == user %}
+                    <p class="text-muted">{{ profile_user.email }}</p>
+                {% endif %}
+
+                {% if profile_user.phone and profile_user == user %}
+                    <p class="text-muted">{{ profile_user.phone }}</p>
+                {% endif %}
+
+                {% if profile_user.bio %}
+                    <p class="mt-3">{{ profile_user.bio }}</p>
+                {% endif %}
+
+                <div class="mt-4">
+                    {% if profile_user == user %}
+                        <a href="{% url 'users:profile_edit' %}" class="btn btn-primary">
+                            Редактировать профиль
+                        </a>
+                    {% else %}
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'chats:create_private' profile_user.username %}" class="btn btn-primary">
+                                Написать сообщение
+                            </a>
+                            {% if is_contact %}
+                                <a href="{% url 'users:remove_contact' profile_user.username %}"
+                                   class="btn btn-danger"
+                                   onclick="return confirm('Удалить из контактов?')">
+                                    Удалить из контактов
+                                </a>
+                            {% else %}
+                                <a href="{% url 'users:add_contact' profile_user.username %}" class="btn btn-success">
+                                    Добавить в контакты
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
