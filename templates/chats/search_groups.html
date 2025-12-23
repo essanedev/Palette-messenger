@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Поиск групп — Palette{% endblock %}
+
+{% block content %}
+<div class="layout">
+  <aside class="sidebar">
+    <h3 style="padding: 16px 0; font-weight: 800;">Поиск групп</h3>
+
+    <form method="get" style="margin-bottom: 16px;">
+      <div class="search">
+        <input type="text" name="q" placeholder="Название группы..." value="{{ query }}" autofocus>
+      </div>
+      <button type="submit" class="primary" style="width: 100%; margin-top: 10px;">Найти</button>
+    </form>
+
+    <div class="contact-list">
+      {% if query %}
+        {% if results %}
+          {% for chat in results %}
+          <div class="contact">
+            <div class="contact-body">
+              <div class="contact-name">{{ chat.name }}</div>
+              <div class="contact-preview">{{ chat.description|truncatewords:10 }}</div>
+              <small style="color: #94a3b8;">Участников: {{ chat.members.count }}</small>
+            </div>
+            <div>
+              <a href="{% url 'chats:join_group' chat.id %}" class="secondary" style="text-decoration: none; font-size: 12px; padding: 6px 12px;">Войти</a>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="contact placeholder">
+            <div class="contact-body">
+              <div class="contact-name">Ничего не найдено</div>
+              <div class="contact-preview">Попробуйте найти другую группу</div>
+            </div>
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="contact placeholder">
+          <div class="contact-body">
+            <div class="contact-name">Введите название</div>
+            <div class="contact-preview">Найдите группы</div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </aside>
+
+  <main class="chat">
+    <div class="messages empty">
+      <div class="empty-hint">Найдите группу</div>
+    </div>
+  </main>
+</div>
+{% endblock %}

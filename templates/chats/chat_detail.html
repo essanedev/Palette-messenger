@@ -1,0 +1,406 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ chat }} — Palette{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Фиксируем высоту области сообщений */
+  .chat {
+    max-height: calc(100vh - 100px);
+    overflow: hidden;
+  }
+
+  .messages {
+    max-height: calc(100vh - 320px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+  }
+
+  /* Стилизация скроллбара */
+  .messages::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .messages::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+  }
+
+  .messages::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+  }
+
+  .messages::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  body.dark .messages::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+
+  body.dark .messages::-webkit-scrollbar-thumb {
+    background: #2a2a2a;
+  }
+
+  body.dark .messages::-webkit-scrollbar-thumb:hover {
+    background: #3a3a3a;
+  }
+
+  /* Для мобильных устройств */
+  @media (max-width: 768px) {
+    .messages {
+      max-height: calc(100vh - 280px);
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="layout">
+  <aside class="sidebar">
+    <div class="search">
+      <input type="text" placeholder="Поиск">
+    </div>
+    <div class="contact-list">
+      <a href="{% url 'chats:list' %}" style="padding: 10px; display: block; background: #f1f5f9; border-radius: 8px; text-decoration: none; color: inherit; margin-bottom: 10px;">
+        ← Назад к чатам
+      </a>
+
+      {% if is_admin and chat.chat_type == 'group' %}
+      <div style="padding: 10px; background: #eef2ff; border-radius: 8px; margin-bottom: 10px;">
+        <form method="post" action="{% url 'chats:add_member' chat.id %}" style="display: flex; gap: 8px;">
+          {% csrf_token %}
+          <input type="text" name="username" placeholder="Имя пользователя" required style="flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px;">
+          <button type="submit" class="primary" style="padding: 8px 12px; font-size: 13px;">+ Добавить</button>
+        </form>
+      </div>
+      {% endif %}
+
+      <h4 style="padding: 10px 0; font-size: 14px; color: #64748b;">Участники:</h4>
+      {% for member in members %}
+      <div class="contact">
+        <div class="contact-body">
+          <div class="contact-name">{{ member.username }}</div>
+          <div class="contact-preview">
+            {% if member.is_really_online %}
+              <span style="color: #10b981;">● Онлайн</span>
+            {% else %}
+              <span style="color: #94a3b8;">○ Оффлайн</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <main class="chat">
+    <div class="chat-header">
+      <div class="chat-user">
+        <div>
+          <div class="chat-with">{{ chat }}</div>
+          <div class="chat-meta">Участников: {{ members|length }}</div>
+        </div>
+      </div>
+      <div id="connection-status" style="font-size: 12px; color: #94a3b8;"></div>
+    </div>
+
+    <div class="messages" id="messages-container">
+      {% for message in messages %}
+      <div class="message {% if message.sender == user %}outgoing{% else %}incoming{% endif %}">
+        <div class="bubble">
+          {% if message.sender != user %}
+            <strong style="display: block; margin-bottom: 4px; font-size: 12px; opacity: 0.8;">{{ message.sender.username }}</strong>
+          {% endif %}
+
+          {% if message.message_type == 'voice' %}
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>🎙️</span>
+              <audio controls style="max-width: 200px; height: 32px;">
+                <source src="{{ message.file.url }}" type="audio/webm">
+              </audio>
+            </div>
+          {% elif message.message_type == 'image' %}
+            <img src="{{ message.file.url }}" alt="Изображение" style="max-width: 300px; border-radius: 8px;">
+          {% elif message.message_type == 'file' %}
+            <a href="{{ message.file.url }}" download style="color: inherit;">
+              📎 {{ message.file.name }}
+            </a>
+          {% else %}
+            {{ message.content }}
+          {% endif %}
+        </div>
+        <div class="time">{{ message.created_at|date:"H:i" }}</div>
+      </div>
+      {% empty %}
+      <div class="empty-hint" id="empty-hint">Нет сообщений. Начните общение!</div>
+      {% endfor %}
+    </div>
+
+    <form class="composer" id="message-form">
+      <button type="button" class="icon-button attach" id="attach-btn" aria-label="Прикрепить файл">📎</button>
+      <input type="file" id="file-input" style="display: none;" accept="image/*,video/*,audio/*,.pdf,.doc,.docx">
+      <input type="text" id="message-input" placeholder="Напишите сообщение…" autocomplete="off">
+      <button type="button" class="icon-button primary voice-toggle" id="voice-btn" data-mode="voice" aria-label="Голосовое сообщение">🎙</button>
+      <button type="submit">Отправить</button>
+    </form>
+
+    <div id="recording-indicator" style="display: none; position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); background: #ef4444; color: white; padding: 12px 24px; border-radius: 24px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); font-weight: 700;">
+      Запись... <span id="recording-time">0:00</span>
+    </div>
+  </main>
+</div>
+
+<script>
+  const chatId = {{ chat.id }};
+  const currentUser = "{{ user.username }}";
+  const messagesContainer = document.getElementById('messages-container');
+  const messageInput = document.getElementById('message-input');
+  const messageForm = document.getElementById('message-form');
+  const connectionStatus = document.getElementById('connection-status');
+  const emptyHint = document.getElementById('empty-hint');
+  const voiceBtn = document.getElementById('voice-btn');
+  const attachBtn = document.getElementById('attach-btn');
+  const fileInput = document.getElementById('file-input');
+  const recordingIndicator = document.getElementById('recording-indicator');
+  const recordingTime = document.getElementById('recording-time');
+
+  const scrollToBottom = () => {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  };
+
+  // WebSocket
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = wsProtocol + '//' + window.location.host + '/ws/chat/' + chatId + '/';
+
+  console.log('Подключаемся к:', wsUrl);
+  connectionStatus.textContent = 'Подключение...';
+  connectionStatus.style.color = '#f59e0b';
+
+  let chatSocket;
+
+  try {
+    chatSocket = new WebSocket(wsUrl);
+  } catch (error) {
+    console.error('Ошибка создания WebSocket:', error);
+    connectionStatus.textContent = 'Запуск через дафни';
+    connectionStatus.style.color = '#ef4444';
+  }
+
+  chatSocket.onopen = function(e) {
+    console.log('WebSocket подключен');
+    connectionStatus.textContent = 'Подключено';
+    connectionStatus.style.color = '#10b981';
+    setTimeout(() => {
+      connectionStatus.textContent = '';
+    }, 2000);
+  };
+
+  chatSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+    console.log('Получено сообщение:', data);
+
+    if (data.type === 'chat_message') {
+      const message = data.message;
+      const isCurrentUser = message.sender === currentUser;
+
+      if (emptyHint) emptyHint.remove();
+
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message ' + (isCurrentUser ? 'outgoing' : 'incoming');
+
+      messageDiv.innerHTML = `
+        <div class="bubble">
+          ${!isCurrentUser ? '<strong style="display: block; margin-bottom: 4px; font-size: 12px; opacity: 0.8;">' + message.sender + '</strong>' : ''}
+          ${message.content}
+        </div>
+        <div class="time">${new Date(message.created_at).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}</div>
+      `;
+
+      messagesContainer.appendChild(messageDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+  };
+
+  chatSocket.onerror = function(error) {
+    console.error('WebSocket ошибка:', error);
+    connectionStatus.textContent = 'Ошибка с дафни';
+    connectionStatus.style.color = '#ef4444';
+  };
+
+  chatSocket.onclose = function(e) {
+    console.log('WebSocket закрыт', e);
+    connectionStatus.textContent = 'Соединение прервано';
+    connectionStatus.style.color = '#f59e0b';
+  };
+
+  // Отправка текстового сообщения
+  messageForm.onsubmit = function(e) {
+    e.preventDefault();
+    const message = messageInput.value.trim();
+
+    if (message && chatSocket.readyState === WebSocket.OPEN) {
+      chatSocket.send(JSON.stringify({
+        'type': 'chat_message',
+        'message': message
+      }));
+      messageInput.value = '';
+    } else if (chatSocket.readyState !== WebSocket.OPEN) {
+      alert('Нет соединения.');
+    }
+
+    return false;
+  };
+
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  messageInput.focus();
+
+  let mediaRecorder;
+  let recordedChunks = [];
+  let isRecording = false;
+  let longPressTimer = null;
+  let recordingStartTime;
+  let recordingTimerInterval;
+  const LONG_PRESS_MS = 500;
+
+  const applyIcon = () => {
+    const mode = voiceBtn.dataset.mode;
+    voiceBtn.textContent = mode === 'voice' ? '🎙' : '📷';
+  };
+
+  const toggleMode = () => {
+    if (isRecording) return;
+    const nextMode = voiceBtn.dataset.mode === 'voice' ? 'video' : 'voice';
+    voiceBtn.dataset.mode = nextMode;
+    applyIcon();
+    console.log('Режим переключен на:', nextMode);
+  };
+
+  const updateRecordingTime = () => {
+    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    recordingTime.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const startRecording = async () => {
+    try {
+      const constraints = {
+        audio: true,
+        video: voiceBtn.dataset.mode === 'video'
+      };
+
+      console.log('Запрос доступа к медиа:', constraints);
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      const mimeType = voiceBtn.dataset.mode === 'video' ? 'video/webm' : 'audio/webm';
+      mediaRecorder = new MediaRecorder(stream, { mimeType });
+      recordedChunks = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          recordedChunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(recordedChunks, { type: mimeType });
+        console.log('Запись остановлена. Размер:', blob.size, 'байт');
+
+        alert(`Записано ${voiceBtn.dataset.mode === 'video' ? 'видео' : 'аудио'}: ${(blob.size / 1024).toFixed(2)} KB.
+
+Пока тут заглушка, потом добавим`);
+
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      isRecording = true;
+      recordingStartTime = Date.now();
+
+      voiceBtn.classList.add('recording');
+      voiceBtn.textContent = '●';
+      recordingIndicator.style.display = 'block';
+
+      recordingTimerInterval = setInterval(updateRecordingTime, 1000);
+
+      console.log('🎙 Запись начата');
+    } catch (error) {
+      console.error('Ошибка доступа к медиа:', error);
+      alert('Не удалось получить доступ к микрофону/камере.\n\nПроверьте:\n1. Разрешения браузера\n2. HTTPS соединение (или localhost)\n3. Наличие устройств записи');
+    }
+  };
+
+  const stopRecording = () => {
+    if (!isRecording || !mediaRecorder) return;
+
+    mediaRecorder.stop();
+    isRecording = false;
+
+    voiceBtn.classList.remove('recording');
+    applyIcon();
+    recordingIndicator.style.display = 'none';
+
+    clearInterval(recordingTimerInterval);
+
+    console.log('Запись остановлена');
+  };
+
+  const pressStart = (e) => {
+    e.preventDefault();
+    clearTimeout(longPressTimer);
+    longPressTimer = setTimeout(() => {
+      startRecording();
+    }, LONG_PRESS_MS);
+  };
+
+  const pressEnd = (e) => {
+    e.preventDefault();
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    if (isRecording) {
+      stopRecording();
+    }
+  };
+
+  voiceBtn.addEventListener('mousedown', pressStart);
+  voiceBtn.addEventListener('touchstart', pressStart, { passive: false });
+
+  voiceBtn.addEventListener('mouseup', pressEnd);
+  voiceBtn.addEventListener('mouseleave', pressEnd);
+  voiceBtn.addEventListener('touchend', pressEnd, { passive: false });
+  voiceBtn.addEventListener('touchcancel', pressEnd);
+
+  voiceBtn.addEventListener('click', (e) => {
+    if (isRecording) {
+      e.preventDefault();
+      return;
+    }
+    toggleMode();
+  });
+
+  // +++++++++++++ ПРИКРЕПЛЕНИЕ ФАЙЛОВ ока не работает++++++++++++
+  attachBtn.addEventListener('click', () => {
+    console.log('Клик по кнопке прикрепления');
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      console.log('Файл выбран:', file.name, '-', (file.size / 1024).toFixed(2), 'KB');
+
+      alert(`Файл выбран: ${file.name} (${(file.size / 1024).toFixed(2)} KB)
+
+Потом добавим отправку, пока тут заглушка.`);
+
+      fileInput.value = '';
+    }
+  });
+
+  console.log('Скрипт чата загружен');
+</script>
+{% endblock %}

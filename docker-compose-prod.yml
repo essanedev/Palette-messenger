@@ -1,0 +1,13 @@
+volumes:
+  static-data:
+  media-data:
+
+services:
+  palette:
+    build: .
+    volumes:
+      - static-data:/static
+      - media-data:/media
+    env_file:
+      - .env
+    restart: unless-stopped
