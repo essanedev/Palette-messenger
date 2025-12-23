@@ -38,6 +38,7 @@ jobs:
   tests:
     name: Django tests
     runs-on: ubuntu-latest
+    environment: venv
     env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
   
