@@ -398,6 +398,75 @@ body {
 .panel-form {
   display: grid;
   gap: 10px;
+
+/* Dashboard visual sections */
+.profile-page-wrapper .card-body.text-center .dashboard-section {
+  padding: 18px 0;
+  border-bottom: 1px solid #eef2ff;
+}
+.profile-page-wrapper .card-body.text-center .dashboard-section:last-child {
+  border-bottom: none;
+}
+.profile-page-wrapper .card-body.text-center .dashboard-section h2 {
+  margin-bottom: 6px;
+}
+.profile-page-wrapper .card-body.text-center .dashboard-section img {
+  object-fit: cover;
+  border: 4px solid #fff;
+  box-shadow: 0 8px 20px rgba(15,23,42,0.08);
+}
+.profile-page-wrapper .card-body.text-center .quick-actions .btn {
+  padding: 10px 12px;
+  height: 48px;
+  font-weight: 700;
+}
+
+/* Segmented control for Discover (Люди / Группы) */
+.segmented-control{
+  display: flex;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e6eefc;
+  border-radius: 12px;
+  padding: 4px;
+}
+.segmented-control .segmented-item{
+  flex: 1;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 800;
+  color: #475569;
+  transition: all 0.12s ease;
+}
+.segmented-control .segmented-item input{
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.segmented-control .segmented-item span{
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 6px;
+  width: 100%;
+  text-align: center;
+}
+.segmented-control .segmented-item input:checked + span{
+  background: var(--brand-color, #5d5fef);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(93,95,239,0.12);
+}
+.segmented-control .segmented-item input:focus + span{
+  outline: 3px solid rgba(93,95,239,0.12);
+  outline-offset: 2px;
+}
+@media (max-width: 576px){
+  .segmented-control{gap:6px}
+  .segmented-control .segmented-item span{font-size:14px}
+}
 }
 
 .panel-form label {
@@ -447,6 +516,29 @@ body {
 
 .secondary:active {
   transform: translateY(0);
+}
+
+.primary,
+.secondary.primary {
+  flex: 1;
+  background: linear-gradient(135deg, #7c3aed, var(--brand-color, #5d5fef));
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(93, 95, 239, 0.25);
+  border: none;
+  font-weight: 700;
+  padding: 12px 16px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+body.dark .primary,
+body.dark .secondary.primary {
+  box-shadow: 0 8px 18px rgba(93, 95, 239, 0.25);
+  background: linear-gradient(135deg, #7c3aed, var(--brand-color, #5d5fef));
+  color: #ffffff;
 }
 
 .panel-form input:focus,
@@ -1437,6 +1529,35 @@ body.dark .contact {
   position: relative;
 }
 
+/* Centering variant used on search page: form is wrapped with .text-center */
+.text-center .search-autocomplete {
+  display: inline-flex;
+  width: auto;
+  max-width: 920px; /* allow wider search box */
+}
+.text-center .search-autocomplete .input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 640px; /* ensure input appears wider on desktop */
+}
+.text-center .search-autocomplete .input-group input.form-control {
+  flex: 1 1 auto;
+  min-width: 560px; /* main visible width of the text field */
+}
+.text-center .search-autocomplete .form-control,
+.text-center .search-autocomplete .btn {
+  height: 40px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+@media (max-width: 768px) {
+  .text-center .search-autocomplete { display:block; width:100%; }
+  .text-center .search-autocomplete .input-group { min-width: 0; width:100%; }
+  .text-center .search-autocomplete .input-group input.form-control { min-width: 0; }
+}
+
 .search-suggestions {
   list-style: none;
   margin: 6px 0 0;
@@ -1481,4 +1602,22 @@ body.dark .contact {
 @media (max-width: 768px) {
   .profile-page-wrapper { padding: 18px 12px; }
   .search-autocomplete { max-width: 100%; }
+}
+
+/* Ensure content inside the small header block is visually centered */
+.profile-page-wrapper .text-center.mb-3 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Center alerts on the search page and limit their width for readability */
+.profile-page-wrapper .alert.alert-info,
+.profile-page-wrapper .alert.alert-warning {
+  text-align: center;
+  margin: 0 auto;
+  max-width: 720px;
 }

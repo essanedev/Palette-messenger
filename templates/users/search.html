@@ -7,6 +7,7 @@
     <div class="col-md-8 offset-md-2">
         <h2 class="mb-3">Поиск пользователей</h2>
 
+        <div class="text-center mb-3">
         <form method="get" class="mb-3 search-autocomplete" action="{% url 'users:search' %}">
             <div class="input-group" style="gap:8px;">
                 <input id="user-search-input" type="text"
@@ -21,6 +22,9 @@
 
             <ul id="search-suggestions" class="search-suggestions" style="display:none;"></ul>
         </form>
+        </div>
+
+        <!-- Styles moved to staticfiles/css/main.css -->
 
         {% if query %}
             {% if results %}
@@ -117,5 +121,6 @@
   });
 })();
 </script>
+ 
 {% endblock %}
 {% endblock %}

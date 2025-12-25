@@ -1,0 +1,32 @@
+{% load static %}
+{% extends 'base.html' %}
+
+{% block title %}Ошибка {{ status_code }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/error.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row profile-page-wrapper">
+  <div class="col-md-8 offset-md-2">
+    <div class="card shadow-sm">
+      <div class="card-body text-center error-card">
+        <div class="brand big-brand">
+          <img src="{% static 'images/Palette.svg' %}" alt="Palette Logo" class="brand-logo brand-animated">
+          Palette
+        </div>
+
+        <h1 class="error-code">{{ status_code }}</h1>
+        <h3 class="error-message">Упс — произошла ошибка</h3>
+        <p class="error-desc">Сервер ответил ошибкой. Пожалуйста, попробуйте снова позже или обратитесь в поддержку.</p>
+
+        <div style="margin-top:18px; display:flex; gap:12px; justify-content:center;">
+          <a href="{% url 'core:dashboard' %}" class="primary">На главную</a>
+          <a href="javascript:location.reload()" class="secondary">Обновить</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

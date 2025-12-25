@@ -1,0 +1,52 @@
+/* Error page styles — matches site look and animates brand color */
+
+.profile-page-wrapper {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 12px;
+}
+
+.error-card { /* scope brand-color animation to this card */
+  --brand-color: #7c3aed;
+  animation: error-brand-shift 12s linear infinite;
+  padding: 36px;
+}
+
+.big-brand { font-size: 28px; font-weight: 800; display: inline-flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.brand-logo { height: 48px; width: auto; display: inline-block; }
+.brand-animated { animation: error-rotate 6s linear infinite; }
+
+.error-code { font-size: 72px; font-weight: 900; margin: 6px 0; color: #0f172a; }
+.error-message { font-size: 20px; font-weight: 800; margin: 6px 0 8px; }
+.error-desc { color: #64748b; max-width: 680px; margin: 0 auto; }
+
+/* Make primary/secondary buttons pick up animated brand color via cascade */
+.error-card .primary,
+.error-card .secondary {
+  min-width: 140px;
+}
+
+@keyframes error-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes error-brand-shift {
+  0% { --brand-color: #ff0000; }
+  14% { --brand-color: #ff8800; }
+  28% { --brand-color: #ffd700; }
+  42% { --brand-color: #1fa637; }
+  56% { --brand-color: #06b6d4; }
+  70% { --brand-color: #0053a2; }
+  84% { --brand-color: #cf18ff; }
+  100% { --brand-color: #ff0000; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .error-code { font-size: 48px; }
+  .brand-logo { height: 40px; }
+  .error-card { padding: 22px; }
+}
