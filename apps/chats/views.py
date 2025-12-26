@@ -379,12 +379,12 @@ def upload_voice(request, chat_id):
 def discover(request):
     all_users = User.objects.exclude(id=request.user.id)
 
-    all_groups = Chat.objects.filter(is_group=True)
+    all_groups = Chat.objects.filter(chat_type='group')
 
     existing_chats = Chat.objects.filter(
-        is_group=False,
-        participants=request.user
-    ).values_list('participants', flat=True)
+        chat_type='private',
+        members=request.user
+    ).values_list('members', flat=True)
 
     available_users = all_users.exclude(id__in=existing_chats)
 
