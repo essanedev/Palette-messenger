@@ -1,12 +1,17 @@
+# user/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Count
+
+from . import models
 from .forms import RegisterForm, LoginForm, ProfileEditForm
-from .models import User, UserContact
+from .models import User, UserContact, Tag
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
+
+from ..chats.models import Chat
 
 
 def register_view(request):
@@ -62,31 +67,60 @@ def discover(request):
     query = request.GET.get('q', '').strip()
     search_type = request.GET.get('type', 'users')
 
-    users_results = []
-    groups_results = []
-
-    if query:
-        if search_type == 'users':
-            users_results = User.objects.filter(
-                Q(username__icontains=query) |
-                Q(first_name__icontains=query) |
-                Q(last_name__icontains=query)
-            ).exclude(id=request.user.id).exclude(
-                id__in=request.user.contacts.values_list('contact_id', flat=True)
-            )[:20]
-        else:
-            from apps.chats.models import Chat
-            groups_results = Chat.objects.filter(
-                chat_type='group',
-                name__icontains=query
-            ).exclude(members=request.user)[:20]
-
     context = {
         'query': query,
         'search_type': search_type,
-        'users_results': users_results,
-        'groups_results': groups_results,
+        'users_results': [],
+        'groups_results': [],
+        'tags_results': [],
     }
+
+    if query:
+        if search_type == 'users':
+            context['users_results'] = User.objects.filter(
+                Q(username__icontains=query) |
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query) |
+                Q(email__icontains=query)
+            ).exclude(id=request.user.id)[:20]
+
+        elif search_type == 'groups':
+            context['groups_results'] = Chat.objects.filter(
+                chat_type='group',
+                name__icontains=query
+            ).annotate(
+                member_count=Count('members')
+            )[:20]
+
+        elif search_type == 'tags':
+            tag_name = query.lower().strip().replace('#', '')
+
+            try:
+                tag = Tag.objects.get(name__iexact=tag_name)
+            except Tag.DoesNotExist:
+                tag = None
+
+            if tag:
+                groups_with_tag = Chat.objects.filter(
+                    chat_type='group',
+                    tags=tag
+                ).annotate(
+                    member_count=Count('members')
+                )
+
+                users_with_tag = User.objects.filter(
+                    tags=tag
+                ).exclude(id=request.user.id)
+
+                context['groups_results'] = groups_with_tag
+                context['users_results'] = users_with_tag
+                context['tag'] = tag
+            else:
+                similar_tags = Tag.objects.filter(
+                    name__icontains=tag_name
+                )[:5]
+                context['similar_tags'] = similar_tags
+
     return render(request, 'users/discover.html', context)
 
 
@@ -110,7 +144,19 @@ def profile_edit(request):
     if request.method == 'POST':
         form = ProfileEditForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
-            form.save()
+            user = form.save()
+
+            tags_str = request.POST.get('tags_input', '')
+
+            tag_names = [t.strip().lstrip('#') for t in tags_str.split() if t.strip()]
+
+            tag_objs = []
+            for name in tag_names:
+                tag, created = Tag.objects.get_or_create(name=name)
+                tag_objs.append(tag)
+
+            user.tags.set(tag_objs)
+
             messages.success(request, 'Профиль обновлен!')
             return redirect('users:profile', username=request.user.username)
     else:
@@ -143,6 +189,45 @@ def search_users(request):
         'results': results,
     }
     return render(request, 'users/search.html', context)
+
+
+@login_required
+def manage_tags(request):
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'add':
+            tag_name = request.POST.get('tag_name', '').strip().lower().replace('#', '')
+            if tag_name:
+                if len(tag_name) > 50:
+                    messages.error(request, 'Тег слишком длинный (максимум 50 символов)')
+                else:
+                    tag, created = Tag.objects.get_or_create(name=tag_name)
+                    request.user.tags.add(tag)
+                    messages.success(request, f'Тег #{tag_name} добавлен')
+            else:
+                messages.error(request, 'Введите название тега')
+
+        elif action == 'remove':
+            tag_id = request.POST.get('tag_id')
+            try:
+                tag = Tag.objects.get(id=tag_id)
+                request.user.tags.remove(tag)
+                messages.success(request, f'Тег #{tag.name} удален')
+            except Tag.DoesNotExist:
+                messages.error(request, 'Тег не найден')
+
+        return redirect('users:manage_tags')
+
+    user_tags = request.user.tags.all()
+    popular_tags = Tag.objects.annotate(
+        usage_count=models.Count('users') + models.Count('chats')
+    ).order_by('-usage_count')[:10]
+
+    return render(request, 'users/manage_tags.html', {
+        'user_tags': user_tags,
+        'popular_tags': popular_tags,
+    })
 
 
 @login_required

@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Мои интересы — Palette{% endblock %}
+
+{% block content %}
+<div class="layout">
+  <aside class="sidebar">
+    <div style="padding: 16px 0;">
+      <h3 style="font-weight: 800; margin: 0 0 16px 0;">Мои интересы</h3>
+
+      <form method="post" style="margin-bottom: 24px;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add">
+        <div style="display: flex; gap: 8px;">
+          <input
+            type="text"
+            name="tag_name"
+            placeholder="Новый тег (без #)"
+            style="flex: 1; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;"
+            maxlength="50"
+          >
+          <button type="submit" class="primary" style="padding: 10px 16px;">+ Добавить</button>
+        </div>
+        <small style="color: #64748b; display: block; margin-top: 4px;">
+          Например: животные, спорт, музыка
+        </small>
+      </form>
+
+      {% if messages %}
+        {% for message in messages %}
+        <div style="padding: 10px; margin-bottom: 10px; border-radius: 8px; {% if message.tags == 'success' %}background: #d1fae5; color: #065f46;{% else %}background: #fee2e2; color: #991b1b;{% endif %}">
+          {{ message }}
+        </div>
+        {% endfor %}
+      {% endif %}
+
+      <h4 style="font-size: 14px; color: #64748b; margin: 24px 0 12px 0;">Ваши теги:</h4>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        {% for tag in user_tags %}
+        <form method="post" style="display: inline;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="remove">
+          <input type="hidden" name="tag_id" value="{{ tag.id }}">
+          <button
+            type="submit"
+            style="padding: 8px 12px; background: var(--brand-color, #5d5fef); color: white; border: none; border-radius: 16px; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;"
+          >
+            #{{ tag.name }} <span style="opacity: 0.8;">×</span>
+          </button>
+        </form>
+        {% empty %}
+        <p style="color: #94a3b8; font-size: 14px;">У вас пока нет тегов</p>
+        {% endfor %}
+      </div>
+
+      <h4 style="font-size: 14px; color: #64748b; margin: 24px 0 12px 0;">Популярные теги:</h4>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        {% for tag in popular_tags %}
+        <a
+          href="{% url 'chats:discover' %}?q={{ tag.name }}&type=tags"
+          style="padding: 6px 12px; background: #f1f5f9; color: #334155; border-radius: 16px; font-size: 13px; text-decoration: none; display: inline-block;"
+        >
+          #{{ tag.name }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </aside>
+
+  <main class="chat">
+    <div class="messages empty">
+      <div class="empty-hint">
+        <h3 style="margin: 0 0 12px 0;">🏷️ Добавьте теги интересов</h3>
+        <p style="margin: 0; color: #64748b;">
+          Теги помогут другим пользователям найти вас по общим интересам.
+          Добавьте теги, которые описывают ваши увлечения, хобби или профессиональные навыки.
+        </p>
+      </div>
+    </div>
+  </main>
+</div>
+
+{% endblock %}
