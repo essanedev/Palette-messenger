@@ -6,12 +6,9 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-from django.conf import settings
-from django.core.files.uploadedfile import SimpleUploadedFile
-import os
 from .models import Chat, Message, ChatMembership
 from apps.users.models import User, UserContact
-from .utils import compress_image, validate_file_size, get_file_type, get_readable_size, compress_video_preview
+from .utils import compress_image, validate_file_size, get_file_type, get_readable_size
 
 import logging
 
@@ -227,14 +224,6 @@ def upload_file(request, chat_id):
 
     logger.info(f"Загрузка файла: {file.name} ({get_readable_size(original_size)}) от {request.user.username}")
 
-    # Сохранение оригинала в папку original для предотвращения потери данных
-    original_path = os.path.join(settings.MEDIA_ROOT, 'messages', 'original', file.name)
-    os.makedirs(os.path.dirname(original_path), exist_ok=True)
-    content = file.read()
-    with open(original_path, 'wb') as f:
-        f.write(content)
-    file = SimpleUploadedFile(name=file.name, content=content, content_type=file.content_type)
-
     if file_type == 'image':
         valid, error_msg = validate_file_size(file, 15)  # 15MB для фото
         if not valid:
@@ -243,7 +232,7 @@ def upload_file(request, chat_id):
 
         try:
             file = compress_image(file, max_size_mb=15, quality=85)
-            logger.info(f"Изображение сжато: {get_readable_size(file.size)}")
+            logger.info(f"✓ Изображение сжато: {get_readable_size(file.size)}")
         except Exception as e:
             logger.error(f"Ошибка сжатия изображения: {e}")
             return JsonResponse({'error': 'Ошибка обработки изображения'}, status=500)
@@ -251,18 +240,10 @@ def upload_file(request, chat_id):
         message_type = 'image'
 
     elif file_type == 'video':
-        valid, error_msg = validate_file_size(file, 40)  # 40MB для видео
+        valid, error_msg = validate_file_size(file, 100)  # 100MB для видео
         if not valid:
             logger.warning(f"Видео отклонено (размер): {error_msg}")
             return JsonResponse({'error': error_msg}, status=400)
-
-        try:
-            file = compress_video_preview(file, max_size_mb=5)
-            logger.info(f"Видео сжато: {get_readable_size(file.size)}")
-        except Exception as e:
-            logger.error(f"Ошибка сжатия видео: {e}")
-            return JsonResponse({'error': 'Ошибка обработки видео'}, status=500)
-
         message_type = 'file'
         logger.info(f"Видео принято: {get_readable_size(file.size)}")
 
@@ -338,14 +319,6 @@ def upload_voice(request, chat_id):
 
     audio_file = request.FILES['audio']
     is_video = request.POST.get('is_video', 'false') == 'true'
-
-    # Сохранение оригинала в папку original для предотвращения потери данных
-    original_path = os.path.join(settings.MEDIA_ROOT, 'messages', 'original', audio_file.name)
-    os.makedirs(os.path.dirname(original_path), exist_ok=True)
-    content = audio_file.read()
-    with open(original_path, 'wb') as f:
-        f.write(content)
-    audio_file = SimpleUploadedFile(name=audio_file.name, content=content, content_type=audio_file.content_type)
 
     original_size = audio_file.size
     logger.info(

@@ -9,6 +9,9 @@ import tempfile
 def compress_image(image_file, max_size_mb=15, quality=85):
     max_size_bytes = max_size_mb * 1024 * 1024
 
+    if image_file.size <= max_size_bytes:
+        return image_file
+
     img = Image.open(image_file)
 
     if img.mode in ('RGBA', 'LA', 'P'):
@@ -19,7 +22,7 @@ def compress_image(image_file, max_size_mb=15, quality=85):
         img = background
 
     current_size = image_file.size
-    scale_factor = min(1, (max_size_bytes / current_size) ** 0.5)
+    scale_factor = (max_size_bytes / current_size) ** 0.5
     new_width = int(img.width * scale_factor * 0.9)
     new_height = int(img.height * scale_factor * 0.9)
 
@@ -65,67 +68,15 @@ def compress_image(image_file, max_size_mb=15, quality=85):
     return compressed_file
 
 
-def compress_video_preview(video_file, max_size_mb=10):
+def compress_video_preview(video_file, max_size_mb=100):
+    # TODO: Дань, я потом буду сжимать через ffmpeg. Пока тут прото проверка на размер
     max_size_bytes = max_size_mb * 1024 * 1024
 
     if video_file.size <= max_size_bytes:
         return video_file
 
-    original_size = video_file.size / (1024 * 1024)
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(video_file.name)[1]) as temp_input:
-        for chunk in video_file.chunks():
-            temp_input.write(chunk)
-        temp_input_path = temp_input.name
-
-    temp_output = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
-    temp_output.close()
-    temp_output_path = temp_output.name
-
-    try:
-        command = [
-            'ffmpeg',
-            '-i', temp_input_path,
-            '-vcodec', 'libx264',
-            '-acodec', 'aac',
-            '-crf', '35',
-            '-preset', 'fast',
-            '-b:a', '128k',
-            '-y', temp_output_path
-        ]
-        subprocess.run(command, check=True, capture_output=True)
-    except subprocess.CalledProcessError as e:
-        print(f"FFmpeg error: {e.stderr.decode()}")
-        os.unlink(temp_input_path)
-        os.unlink(temp_output_path)
-        return video_file
-    except FileNotFoundError:
-        print("FFmpeg не найден. Пожалуйста, установите FFmpeg и убедитесь, что он доступен в PATH.")
-        os.unlink(temp_input_path)
-        os.unlink(temp_output_path)
-        return video_file
-
-    with open(temp_output_path, 'rb') as f:
-        compressed_data = f.read()
-
-    compressed_size = len(compressed_data) / (1024 * 1024)
-
-    os.unlink(temp_input_path)
-    os.unlink(temp_output_path)
-
-    output = BytesIO(compressed_data)
-    compressed_file = InMemoryUploadedFile(
-        output,
-        'FileField',
-        f"{os.path.splitext(video_file.name)[0]}.mp4",
-        'video/mp4',
-        len(compressed_data),
-        None
-    )
-
-    print(f"Сжатие видео: {original_size:.2f}MB -> {compressed_size:.2f}MB")
-
-    return compressed_file
+    print(f"Видео слишком большое: {video_file.size / (1024 * 1024):.2f}MB")
+    return video_file
 
 
 def validate_file_size(file, max_size_mb):

@@ -12,8 +12,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 FROM python:3.13-slim
 
-RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
-
 RUN useradd -m -r palette-user && \
    mkdir /palette-messenger && \
    chown -R palette-user /palette-messenger
