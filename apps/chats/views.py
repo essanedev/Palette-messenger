@@ -88,8 +88,12 @@ def create_group_chat(request):
         member_ids = request.POST.getlist('members')
 
         if not name:
-            django_messages.error(request, 'Укажите название группы')
-            return redirect('chats:list')
+            error_msg = 'Укажите название группы'
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':  # AJAX-запрос
+                return JsonResponse({'success': False, 'message': error_msg})
+            else:
+                django_messages.error(request, error_msg)
+                return redirect('chats:list')
 
         chat = Chat.objects.create(
             name=name,
@@ -111,11 +115,19 @@ def create_group_chat(request):
             except User.DoesNotExist:
                 pass
 
-        django_messages.success(request, 'Группа создана!')
-        return redirect('chats:detail', chat_id=chat.id)
+        success_msg = 'Группа создана!'
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': success_msg,
+                'chat_id': chat.id,
+                'redirect': reverse('chats:detail', kwargs={'chat_id': chat.id})
+            })
+        else:
+            django_messages.success(request, success_msg)
+            return redirect('chats:detail', chat_id=chat.id)
 
-    contacts = request.user.contacts.all()
-    return render(request, 'chats/create_group.html', {'contacts': contacts})
+    return redirect('chats:list')
 
 
 @login_required

@@ -111,7 +111,7 @@
 
     <section class="panel-section hidden" data-section="group">
       <h3>Создать группу</h3>
-      <form class="panel-form" method="post" action="{% url 'chats:create_group' %}">
+      <form class="panel-form" id="create-group-form" method="post" action="{% url 'chats:create_group' %}">  <!-- Добавлен id для JS -->
         {% csrf_token %}
         <label>
           <span>Название группы</span>
@@ -168,6 +168,28 @@
 
   centerPanel.addEventListener('click', (e) => {
     if (e.target === centerPanel) centerPanel.classList.remove('open');
+  });
+
+  // Новый JS для AJAX-submit формы
+  $(document).on('submit', '#create-group-form', function(e) {
+    e.preventDefault();  // Предотвращаем дефолтный submit (релоад)
+
+    $.ajax({
+      type: 'POST',
+      url: $(this).attr('action'),  // URL из action формы
+      data: $(this).serialize(),  // Автоматически сериализует все поля (включая checkboxes members)
+      success: function(response) {
+        if (response.success) {
+          alert(response.message);
+          centerPanel.classList.remove('open');
+        } else {
+          alert(response.message || 'Ошибка создания группы');
+        }
+      },
+      error: function() {
+        alert('Ошибка сервера. Попробуйте позже.');
+      }
+    });
   });
 </script>
 {% endblock %}

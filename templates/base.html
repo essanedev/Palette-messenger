@@ -29,7 +29,7 @@
         <div class="settings-username">{{ user.username }}</div>
       </div>
 
-      <button class="settings-item" data-section="profile" role="menuitem">Профиль</button>
+      <a href="{% url 'users:profile' user.username %}" class="settings-item" role="menuitem" style="text-decoration: none; display: block;">Профиль</a>
       <a href="{% url 'chats:list' %}" class="settings-item" role="menuitem" style="text-decoration: none; display: block;">Мои чаты</a>
       <a href="{% url 'users:discover' %}" class="settings-item" role="menuitem" style="text-decoration: none; display: block;">Найти знакомства</a>
       <a href="{% url 'users:contacts' %}" class="settings-item" role="menuitem" style="text-decoration: none; display: block;">Контакты</a>
