@@ -113,6 +113,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'is_typing': event['is_typing']
             }))
 
+    async def message_updated(self, event):
+        print(f"Message updated: {event['message']['id']}")
+        await self.send(text_data=json.dumps({
+            'type': 'message_updated',
+            'message': event['message']
+        }))
+
     @database_sync_to_async
     def check_chat_access(self):
         try:

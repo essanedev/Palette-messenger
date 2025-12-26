@@ -6,9 +6,13 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
+import os
 from .models import Chat, Message, ChatMembership
-from .utils import compress_image, validate_file_size, get_file_type, get_readable_size
-from apps.users.models import User
+from apps.users.models import User, UserContact
+from .utils import compress_image, validate_file_size, get_file_type, get_readable_size, compression_queue
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -79,44 +83,76 @@ def create_private_chat(request, username):
     django_messages.success(request, f'Чат с {other_user.username} создан')
     return redirect('chats:detail', chat_id=chat.id)
 
-
 @login_required
-def create_group_chat(request):
+def create_group(request):
     if request.method == 'POST':
-        name = request.POST.get('name')
-        description = request.POST.get('description', '')
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
         member_ids = request.POST.getlist('members')
 
         if not name:
-            django_messages.error(request, 'Укажите название группы')
-            return redirect('chats:list')
+            django_messages.error(request, 'Название группы обязательно')
+            return redirect('chats:create_group')
 
-        chat = Chat.objects.create(
+        if len(name) > 100:
+            django_messages.error(request, 'Название группы слишком длинное (максимум 100 символов)')
+            return redirect('chats:create_group')
+
+        group = Chat.objects.create(
             name=name,
             description=description,
             chat_type='group'
         )
 
         ChatMembership.objects.create(
-            chat=chat,
+            chat=group,
             user=request.user,
             role='admin'
         )
 
-        for user_id in member_ids:
+        if member_ids:
             try:
-                user = User.objects.get(id=user_id)
-                if user != request.user:
-                    ChatMembership.objects.create(chat=chat, user=user)
-            except User.DoesNotExist:
-                pass
+                user_contacts = UserContact.objects.filter(
+                    user=request.user
+                ).values_list('contact_id', flat=True)
 
-        django_messages.success(request, 'Группа создана!')
-        return redirect('chats:detail', chat_id=chat.id)
+                valid_member_ids = [
+                    int(mid) for mid in member_ids
+                    if mid.isdigit() and int(mid) in user_contacts
+                ]
 
-    contacts = request.user.contacts.all()
-    return render(request, 'chats/create_group.html', {'contacts': contacts})
+                if valid_member_ids:
+                    members = User.objects.filter(id__in=valid_member_ids)
+                    for member in members:
+                        ChatMembership.objects.create(
+                            chat=group,
+                            user=member,
+                            role='member'
+                        )
+            except Exception as e:
+                print(f"Ошибка добавления участников: {e}")
 
+        Message.objects.create(
+            chat=group,
+            sender=request.user,
+            content=f'Группа "{name}" создана',
+            message_type='text'
+        )
+
+        django_messages.success(request, f'Группа "{name}" успешно создана!')
+        return redirect('chats:detail', chat_id=group.id)
+
+    try:
+        contacts = UserContact.objects.filter(user=request.user).select_related('contact')
+    except Exception:
+        contacts = []
+
+    context = {
+        'user': request.user,
+        'contacts': contacts,
+    }
+
+    return render(request, 'chats/create_group.html', context)
 
 @login_required
 def search_groups(request):
@@ -191,6 +227,16 @@ def upload_file(request, chat_id):
 
     logger.info(f"Загрузка файла: {file.name} ({get_readable_size(original_size)}) от {request.user.username}")
 
+    # Сохранение оригинала в папку original для предотвращения потери данных
+    original_path = os.path.join(settings.MEDIA_ROOT, 'messages', 'original', file.name)
+    os.makedirs(os.path.dirname(original_path), exist_ok=True)
+    content = file.read()
+    with open(original_path, 'wb') as f:
+        f.write(content)
+    file = SimpleUploadedFile(name=file.name, content=content, content_type=file.content_type)
+
+    message_created = False
+
     if file_type == 'image':
         valid, error_msg = validate_file_size(file, 15)  # 15MB для фото
         if not valid:
@@ -199,7 +245,7 @@ def upload_file(request, chat_id):
 
         try:
             file = compress_image(file, max_size_mb=15, quality=85)
-            logger.info(f"✓ Изображение сжато: {get_readable_size(file.size)}")
+            logger.info(f"Изображение сжато: {get_readable_size(file.size)}")
         except Exception as e:
             logger.error(f"Ошибка сжатия изображения: {e}")
             return JsonResponse({'error': 'Ошибка обработки изображения'}, status=500)
@@ -207,12 +253,33 @@ def upload_file(request, chat_id):
         message_type = 'image'
 
     elif file_type == 'video':
-        valid, error_msg = validate_file_size(file, 100)  # 100MB для видео
+        valid, error_msg = validate_file_size(file, 40)  # 40MB для видео
         if not valid:
             logger.warning(f"Видео отклонено (размер): {error_msg}")
             return JsonResponse({'error': error_msg}, status=400)
+
+        # For videos, create message first with original file, then compress asynchronously
         message_type = 'file'
         logger.info(f"Видео принято: {get_readable_size(file.size)}")
+
+        try:
+            message = Message.objects.create(
+                chat=chat,
+                sender=request.user,
+                message_type=message_type,
+                file=file,
+                content=f"Отправил(а) {file.name}"
+            )
+            logger.info(f"Видео сохранено в БД: message_id={message.id}")
+        except Exception as e:
+            logger.error(f"Ошибка сохранения видео: {e}")
+            return JsonResponse({'error': 'Ошибка сохранения видео'}, status=500)
+
+        # Start async compression
+        compression_queue.put((file, message, 5))
+
+        # Skip the general message creation below
+        message_created = True
 
     elif file_type == 'voice':
         valid, error_msg = validate_file_size(file, 10)  # 10MB для аудио
@@ -228,18 +295,19 @@ def upload_file(request, chat_id):
             return JsonResponse({'error': error_msg}, status=400)
         message_type = 'file'
 
-    try:
-        message = Message.objects.create(
-            chat=chat,
-            sender=request.user,
-            message_type=message_type,
-            file=file,
-            content=f"Отправил(а) {file.name}"
-        )
-        logger.info(f"Файл сохранен в БД: message_id={message.id}")
-    except Exception as e:
-        logger.error(f"Ошибка сохранения сообщения: {e}")
-        return JsonResponse({'error': 'Ошибка сохранения файла'}, status=500)
+    if not message_created:
+        try:
+            message = Message.objects.create(
+                chat=chat,
+                sender=request.user,
+                message_type=message_type,
+                file=file,
+                content=f"Отправил(а) {file.name}"
+            )
+            logger.info(f"Файл сохранен в БД: message_id={message.id}")
+        except Exception as e:
+            logger.error(f"Ошибка сохранения сообщения: {e}")
+            return JsonResponse({'error': 'Ошибка сохранения файла'}, status=500)
 
     try:
         channel_layer = get_channel_layer()
@@ -286,6 +354,14 @@ def upload_voice(request, chat_id):
 
     audio_file = request.FILES['audio']
     is_video = request.POST.get('is_video', 'false') == 'true'
+
+    # Сохранение оригинала в папку original для предотвращения потери данных
+    original_path = os.path.join(settings.MEDIA_ROOT, 'messages', 'original', audio_file.name)
+    os.makedirs(os.path.dirname(original_path), exist_ok=True)
+    content = audio_file.read()
+    with open(original_path, 'wb') as f:
+        f.write(content)
+    audio_file = SimpleUploadedFile(name=audio_file.name, content=content, content_type=audio_file.content_type)
 
     original_size = audio_file.size
     logger.info(

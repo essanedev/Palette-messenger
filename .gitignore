@@ -211,7 +211,7 @@ marimo/_lsp/
 __marimo__/
 /.vs
 /.idea
-/.media
-/.static
+/media
+/static
 act.exe
 /media

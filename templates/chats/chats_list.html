@@ -13,7 +13,7 @@
     <div class="contact-list">
       {% if chats %}
         {% for chat in chats %}
-        {% with unread=chat.unread_count %}  <!-- ИСПРАВЛЕНО: убрали |default:0 -->
+        {% with unread=chat.unread_count %}
         <a href="{% url 'chats:detail' chat.id %}" class="contact" style="text-decoration: none; color: inherit; position: relative;">
           <div class="contact-body">
             <div class="contact-name" style="{% if unread > 0 %}font-weight: 800;{% endif %}">
@@ -64,11 +64,11 @@
         {% csrf_token %}
         <label>
           <span>Название группы</span>
-          <input type="text" name="name" placeholder="Например, Проект А" required>
+          <input type="text" name="name" placeholder="Название группы" required>
         </label>
         <label>
           <span>Описание</span>
-          <textarea name="description" placeholder="Описание группы..."></textarea>
+          <textarea name="description" placeholder="Описание группы"></textarea>
         </label>
         <label>
           <span>Участники</span>
@@ -120,7 +120,6 @@
   };
 
   settingsButtons.forEach((btn) => {
-    // Пропускаем кнопку профиля, так как она теперь ссылка
     if (btn.dataset.section === 'profile') {
       return;
     }
@@ -138,5 +137,5 @@
     if (e.target === centerPanel) centerPanel.classList.remove('open');
   });
 </script>
- 
+
 {% endblock %}
