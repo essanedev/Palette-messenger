@@ -42,6 +42,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'apps.users.middleware.UpdateLastActivityMiddleware',
+    'apps.core.middleware.AuthRedirectMiddleware',
 ]
 
 ROOT_URLCONF = 'Palette.urls'

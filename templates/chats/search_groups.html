@@ -1,58 +1,87 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Поиск групп — Palette{% endblock %}
+{% block title %}Создать группу — Palette{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
 
 {% block content %}
-<div class="layout">
-  <aside class="sidebar">
-    <h3 style="padding: 16px 0; font-weight: 800;">Поиск групп</h3>
+<div class="profile-page-wrapper">
+    <div class="col-md-8" style="max-width: 720px;">
+        <div class="card">
+            <div class="card-body">
+                <h2 style="margin-bottom: 20px; font-weight: 800;">Создать группу</h2>
 
-    <form method="get" style="margin-bottom: 16px;">
-      <div class="search">
-        <input type="text" name="q" placeholder="Название группы..." value="{{ query }}" autofocus>
-      </div>
-      <button type="submit" class="primary" style="width: 100%; margin-top: 10px;">Найти</button>
-    </form>
+                <form method="post" class="profile-edit-form">
+                    {% csrf_token %}
 
-    <div class="contact-list">
-      {% if query %}
-        {% if results %}
-          {% for chat in results %}
-          <div class="contact">
-            <div class="contact-body">
-              <div class="contact-name">{{ chat.name }}</div>
-              <div class="contact-preview">{{ chat.description|truncatewords:10 }}</div>
-              <small style="color: #94a3b8;">Участников: {{ chat.members.count }}</small>
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Название группы</label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="name"
+                            name="name"
+                            placeholder="Например, Проект А"
+                            required
+                            maxlength="100"
+                        >
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Описание</label>
+                        <textarea
+                            class="form-control"
+                            id="description"
+                            name="description"
+                            rows="4"
+                            placeholder="Опишите, для чего создается группа..."
+                        ></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Участники (опционально)</label>
+                        <div style="max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px;">
+                            {% if user.contacts.all %}
+                                {% for contact in user.contacts.all %}
+                                <label style="display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                                    <input
+                                        type="checkbox"
+                                        name="members"
+                                        value="{{ contact.contact.id }}"
+                                        style="accent-color: var(--brand-color, #5d5fef);"
+                                    >
+                                    <span style="font-weight: 600;">{{ contact.contact.username }}</span>
+                                    {% if contact.contact.email %}
+                                        <span style="color: #94a3b8; font-size: 13px;">({{ contact.contact.email }})</span>
+                                    {% endif %}
+                                </label>
+                                {% endfor %}
+                            {% else %}
+                                <div style="text-align: center; padding: 20px; color: #94a3b8;">
+                                    У вас пока нет контактов. Вы можете создать пустую группу и добавить участников позже.
+                                </div>
+                            {% endif %}
+                        </div>
+                        <small style="color: #64748b; display: block; margin-top: 6px;">
+                            Выберите контакты, которых хотите добавить в группу сразу
+                        </small>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 24px;">
+                        <a href="{% url 'chats:discover' %}" class="secondary" style="flex: 1; text-align: center; text-decoration: none;">
+                            Отмена
+                        </a>
+                        <button type="submit" class="primary" style="flex: 1;">
+                            ✅ Создать группу
+                        </button>
+                    </div>
+                </form>
             </div>
-            <div>
-              <a href="{% url 'chats:join_group' chat.id %}" class="secondary" style="text-decoration: none; font-size: 12px; padding: 6px 12px;">Войти</a>
-            </div>
-          </div>
-          {% endfor %}
-        {% else %}
-          <div class="contact placeholder">
-            <div class="contact-body">
-              <div class="contact-name">Ничего не найдено</div>
-              <div class="contact-preview">Попробуйте найти другую группу</div>
-            </div>
-          </div>
-        {% endif %}
-      {% else %}
-        <div class="contact placeholder">
-          <div class="contact-body">
-            <div class="contact-name">Введите название</div>
-            <div class="contact-preview">Найдите группы</div>
-          </div>
         </div>
-      {% endif %}
     </div>
-  </aside>
-
-  <main class="chat">
-    <div class="messages empty">
-      <div class="empty-hint">Найдите группу</div>
-    </div>
-  </main>
 </div>
+
 {% endblock %}

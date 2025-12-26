@@ -5,6 +5,8 @@ from django.contrib import messages
 from django.db.models import Q
 from .forms import RegisterForm, LoginForm, ProfileEditForm
 from .models import User, UserContact
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
 
 
 def register_view(request):
@@ -87,6 +89,7 @@ def discover(request):
     }
     return render(request, 'users/discover.html', context)
 
+
 @login_required
 def profile_view(request, username):
     user = get_object_or_404(User, username=username)
@@ -150,7 +153,6 @@ def add_contact(request, username):
         messages.error(request, 'Нельзя добавить самого себя в контакты')
         return redirect('users:profile', username=username)
 
-    # Проверяем, не добавлен ли уже
     contact, created = UserContact.objects.get_or_create(
         owner=request.user,
         contact=contact_user
@@ -198,3 +200,23 @@ def block_contact(request, username):
         messages.error(request, 'Контакт не найден')
 
     return redirect('users:contacts')
+
+
+@require_GET
+@login_required
+def autocomplete_users(request):
+    q = request.GET.get('q', '').strip()
+    results = []
+    if q:
+        qs = User.objects.filter(
+            Q(username__icontains=q) |
+            Q(first_name__icontains=q) |
+            Q(last_name__icontains=q)
+        ).exclude(id=request.user.id)[:10]
+        for u in qs:
+            results.append({
+                'username': u.username,
+                'full_name': (u.get_full_name() or ''),
+                'avatar': (u.avatar.url if getattr(u, 'avatar', None) else '')
+            })
+    return JsonResponse({'results': results})

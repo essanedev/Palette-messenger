@@ -13,7 +13,7 @@
     <div class="contact-list">
       {% if chats %}
         {% for chat in chats %}
-        {% with unread=chat.unread_count %}  <!-- ИСПРАВЛЕНО: убрали |default:0 -->
+        {% with unread=chat.unread_count %}
         <a href="{% url 'chats:detail' chat.id %}" class="contact" style="text-decoration: none; color: inherit; position: relative;">
           <div class="contact-body">
             <div class="contact-name" style="{% if unread > 0 %}font-weight: 800;{% endif %}">
@@ -58,29 +58,17 @@
   <div class="panel-card">
     <button class="panel-close" aria-label="Закрыть">✕</button>
 
-    <section class="panel-section hidden" data-section="profile">
-      <h3>Профиль</h3>
-      <div class="panel-profile">
-        <div class="panel-avatar">{{ user.username|first|upper }}</div>
-        <div class="panel-info">
-          <div class="panel-name">{{ user.username }}</div>
-          <div class="panel-email">{{ user.email }}</div>
-        </div>
-      </div>
-      <a href="{% url 'users:profile_edit' %}" class="secondary" style="text-decoration: none; text-align: center; display: block;">Редактировать</a>
-    </section>
-
     <section class="panel-section hidden" data-section="group">
       <h3>Создать группу</h3>
       <form class="panel-form" method="post" action="{% url 'chats:create_group' %}">
         {% csrf_token %}
         <label>
           <span>Название группы</span>
-          <input type="text" name="name" placeholder="Например, Проект А" required>
+          <input type="text" name="name" placeholder="Название группы" required>
         </label>
         <label>
           <span>Описание</span>
-          <textarea name="description" placeholder="Описание группы..."></textarea>
+          <textarea name="description" placeholder="Описание группы"></textarea>
         </label>
         <label>
           <span>Участники</span>
@@ -125,10 +113,16 @@
       node.classList.toggle('hidden', node.dataset.section !== section);
     });
     centerPanel.classList.add('open');
-    document.querySelector('.settings-menu').classList.remove('open');
+    const settingsMenu = document.querySelector('.settings-menu');
+    if (settingsMenu) {
+      settingsMenu.classList.remove('open');
+    }
   };
 
   settingsButtons.forEach((btn) => {
+    if (btn.dataset.section === 'profile') {
+      return;
+    }
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       openPanel(btn.dataset.section);
@@ -143,4 +137,5 @@
     if (e.target === centerPanel) centerPanel.classList.remove('open');
   });
 </script>
+
 {% endblock %}

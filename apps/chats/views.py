@@ -7,8 +7,9 @@ from django.views.decorators.http import require_POST
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from .models import Chat, Message, ChatMembership
+from apps.users.models import User, UserContact
 from .utils import compress_image, validate_file_size, get_file_type, get_readable_size
-from apps.users.models import User
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -79,44 +80,76 @@ def create_private_chat(request, username):
     django_messages.success(request, f'Чат с {other_user.username} создан')
     return redirect('chats:detail', chat_id=chat.id)
 
-
 @login_required
-def create_group_chat(request):
+def create_group(request):
     if request.method == 'POST':
-        name = request.POST.get('name')
-        description = request.POST.get('description', '')
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
         member_ids = request.POST.getlist('members')
 
         if not name:
-            django_messages.error(request, 'Укажите название группы')
-            return redirect('chats:list')
+            django_messages.error(request, 'Название группы обязательно')
+            return redirect('chats:create_group')
 
-        chat = Chat.objects.create(
+        if len(name) > 100:
+            django_messages.error(request, 'Название группы слишком длинное (максимум 100 символов)')
+            return redirect('chats:create_group')
+
+        group = Chat.objects.create(
             name=name,
             description=description,
             chat_type='group'
         )
 
         ChatMembership.objects.create(
-            chat=chat,
+            chat=group,
             user=request.user,
             role='admin'
         )
 
-        for user_id in member_ids:
+        if member_ids:
             try:
-                user = User.objects.get(id=user_id)
-                if user != request.user:
-                    ChatMembership.objects.create(chat=chat, user=user)
-            except User.DoesNotExist:
-                pass
+                user_contacts = UserContact.objects.filter(
+                    user=request.user
+                ).values_list('contact_id', flat=True)
 
-        django_messages.success(request, 'Группа создана!')
-        return redirect('chats:detail', chat_id=chat.id)
+                valid_member_ids = [
+                    int(mid) for mid in member_ids
+                    if mid.isdigit() and int(mid) in user_contacts
+                ]
 
-    contacts = request.user.contacts.all()
-    return render(request, 'chats/create_group.html', {'contacts': contacts})
+                if valid_member_ids:
+                    members = User.objects.filter(id__in=valid_member_ids)
+                    for member in members:
+                        ChatMembership.objects.create(
+                            chat=group,
+                            user=member,
+                            role='member'
+                        )
+            except Exception as e:
+                print(f"Ошибка добавления участников: {e}")
 
+        Message.objects.create(
+            chat=group,
+            sender=request.user,
+            content=f'Группа "{name}" создана',
+            message_type='text'
+        )
+
+        django_messages.success(request, f'Группа "{name}" успешно создана!')
+        return redirect('chats:detail', chat_id=group.id)
+
+    try:
+        contacts = UserContact.objects.filter(user=request.user).select_related('contact')
+    except Exception:
+        contacts = []
+
+    context = {
+        'user': request.user,
+        'contacts': contacts,
+    }
+
+    return render(request, 'chats/create_group.html', context)
 
 @login_required
 def search_groups(request):
@@ -340,3 +373,24 @@ def upload_voice(request, chat_id):
             'created_at': message.created_at.isoformat(),
         }
     })
+
+
+@login_required
+def discover(request):
+    all_users = User.objects.exclude(id=request.user.id)
+
+    all_groups = Chat.objects.filter(is_group=True)
+
+    existing_chats = Chat.objects.filter(
+        is_group=False,
+        participants=request.user
+    ).values_list('participants', flat=True)
+
+    available_users = all_users.exclude(id__in=existing_chats)
+
+    context = {
+        'users': available_users,
+        'groups': all_groups,
+    }
+
+    return render(request, 'chats/discover.html', context)
