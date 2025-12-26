@@ -7,11 +7,12 @@
   <meta name="mobile-web-app-capable" content="yes">
   <title>Palette — вход</title>
   <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+  <link rel="stylesheet" href="{% static 'css/login.css' %}">
 </head>
 <body>
   <main class="auth">
     <div class="auth-card">
-      <a href="{% url 'core:dashboard' %}" class="brand" style="text-decoration: none; color: inherit; display:flex; align-items:center; gap:8px;">
+      <a href="{% url 'core:dashboard' %}" class="brand brand-link">
         <img src="{% static 'images/Palette.svg' %}" alt="Palette Logo" class="brand-logo">
         Palette
       </a>
@@ -25,7 +26,7 @@
         {% csrf_token %}
 
         {% if form.errors %}
-          <div style="background: #fee2e2; padding: 12px; border-radius: 10px; color: #991b1b; font-weight: 600;">
+          <div class="form-error">
             Неверное имя пользователя или пароль
           </div>
         {% endif %}

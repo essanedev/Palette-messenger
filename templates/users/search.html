@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Поиск пользователей{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/search.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="row profile-page-wrapper">
@@ -9,7 +13,7 @@
 
         <div class="text-center mb-3">
         <form method="get" class="mb-3 search-autocomplete" action="{% url 'users:search' %}">
-            <div class="input-group" style="gap:8px;">
+            <div class="input-group">
                 <input id="user-search-input" type="text"
                        name="q"
                        class="form-control"
@@ -20,7 +24,7 @@
                 <button class="btn btn-primary" type="submit">Найти</button>
             </div>
 
-            <ul id="search-suggestions" class="search-suggestions" style="display:none;"></ul>
+            <ul id="search-suggestions" class="search-suggestions"></ul>
         </form>
         </div>
 
@@ -37,8 +41,7 @@
                                 {% if user.avatar %}
                                     <img src="{{ user.avatar.url }}" class="rounded-circle me-3" width="50" height="50" alt="Avatar">
                                 {% else %}
-                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3"
-                                         style="width: 50px; height: 50px;">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3 avatar-fallback">
                                         {{ user.username|first|upper }}
                                     </div>
                                 {% endif %}

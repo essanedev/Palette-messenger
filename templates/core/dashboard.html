@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Главная - Palette Messenger{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="row profile-page-wrapper">
@@ -15,8 +19,7 @@
                     {% if user.avatar %}
                         <img src="{{ user.avatar.url }}" class="rounded-circle my-3" width="150" height="150" alt="Avatar">
                     {% else %}
-                        <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center my-3"
-                             style="width: 150px; height: 150px; font-size: 60px;">
+                        <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center my-3 avatar-fallback-lg">
                             {{ user.username|first|upper }}
                         </div>
                     {% endif %}
