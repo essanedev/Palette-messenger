@@ -5,6 +5,26 @@ import os
 import subprocess
 import tempfile
 import logging
+import queue
+import threading
+import time
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+
+
+compression_queue = queue.Queue()
+
+def compression_worker():
+    while True:
+        item = compression_queue.get()
+        if item is None:
+            break
+        video_file, message, max_size_mb = item
+        compress_video_preview_task(video_file, message, max_size_mb)
+        compression_queue.task_done()
+
+worker_thread = threading.Thread(target=compression_worker, daemon=True)
+worker_thread.start()
 
 
 def compress_image(image_file, max_size_mb=15, quality=85):
@@ -103,14 +123,27 @@ def compress_video_preview(video_file, max_size_mb=10):
             '-y', temp_output_path
         ]
         logging.info(f"Running FFmpeg command for {video_file.name}")
-        result = subprocess.run(command, check=True, capture_output=True, timeout=600)  # Increased timeout to 10 minutes
+        process = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        last_progress = ""
+        while process.poll() is None:
+            time.sleep(2)
+            try:
+                with open(progress_path, 'r') as pf:
+                    lines = pf.readlines()
+                    if lines:
+                        current_progress = lines[-1].strip()
+                        if current_progress != last_progress:
+                            logging.info(f"FFmpeg progress for {video_file.name}: {current_progress}")
+                            last_progress = current_progress
+            except Exception as e:
+                logging.warning(f"Error reading progress for {video_file.name}: {e}")
+        
+        if process.returncode != 0:
+            logging.error(f"FFmpeg failed for {video_file.name} with return code {process.returncode}")
+            raise subprocess.CalledProcessError(process.returncode, command)
+        
         logging.info(f"FFmpeg completed successfully for {video_file.name}")
-
-        # Read and log progress
-        with open(progress_path, 'r') as pf:
-            progress_lines = pf.readlines()
-            if progress_lines:
-                logging.info(f"FFmpeg progress for {video_file.name}: {progress_lines[-1].strip()}")
 
     except subprocess.TimeoutExpired:
         logging.error(f"FFmpeg compression timed out for {video_file.name} after 600 seconds")
@@ -119,7 +152,7 @@ def compress_video_preview(video_file, max_size_mb=10):
         os.unlink(progress_path)
         return video_file
     except subprocess.CalledProcessError as e:
-        logging.error(f"FFmpeg error for {video_file.name}: {e.stderr.decode()}")
+        logging.error(f"FFmpeg error for {video_file.name}: {e}")
         os.unlink(temp_input_path)
         os.unlink(temp_output_path)
         os.unlink(progress_path)
@@ -149,8 +182,6 @@ def compress_video_preview(video_file, max_size_mb=10):
         len(compressed_data),
         None
     )
-
-    logging.info(f"Video compression completed for {video_file.name}: {original_size:.2f}MB -> {compressed_size:.2f}MB")
 
     return compressed_file
 
@@ -188,15 +219,34 @@ def get_readable_size(size_bytes):
         size_bytes /= 1024.0
     return f"{size_bytes:.1f} ТБ"
 
-def compress_video_preview_async(video_file, message, max_size_mb=10):
-    # Сжать видео асинхронно и обновить сообщение
+def compress_video_preview_task(video_file, message, max_size_mb=10):
+    logging.info(f"Starting video compression task for message {message.id}, file {video_file.name}")
     try:
         compressed_file = compress_video_preview(video_file, max_size_mb=max_size_mb)
         
-        message.file = compressed_file
-        message.save(update_fields=['file'])
+        logging.info(f"Updating message {message.id} with compressed file (saving to storage)")
+        try:
+            compressed_file.file.seek(0)
+            data = compressed_file.file.read()
+        except Exception:
+            try:
+                data = compressed_file.read()
+            except Exception as e:
+                logging.error(f"Could not read compressed data for message {message.id}: {e}")
+                raise
+
+        try:
+            old_name = message.file.name if message.file else None
+            if old_name and default_storage.exists(old_name):
+                default_storage.delete(old_name)
+        except Exception as e:
+            logging.warning(f"Failed to delete old file for message {message.id}: {e}")
+
+        new_name = os.path.basename(old_name) if old_name else os.path.basename(compressed_file.name)
+        message.file.save(new_name, ContentFile(data), save=True)
+        logging.info(f"Message {message.id} updated successfully, new file_url: {message.file.url}")
         
-        logging.info(f"Async video compression completed for message {message.id}: {video_file.size / (1024 * 1024):.2f}MB -> {compressed_file.size / (1024 * 1024):.2f}MB")
+        logging.info(f"Video compression completed for message {message.id}: {video_file.size / (1024 * 1024):.2f}MB -> {compressed_file.size / (1024 * 1024):.2f}MB")
         
         from channels.layers import get_channel_layer
         from asgiref.sync import async_to_sync
@@ -205,12 +255,19 @@ def compress_video_preview_async(video_file, message, max_size_mb=10):
         async_to_sync(channel_layer.group_send)(
             f'chat_{message.chat.id}',
             {
-                'type': 'file_compressed',
-                'message_id': message.id,
-                'file_url': message.file.url,
-                'file_size': compressed_file.size,
+                'type': 'message_updated',
+                'message': {
+                    'id': message.id,
+                    'content': message.content,
+                    'sender': message.sender.username,
+                    'sender_avatar': message.sender.avatar.url if message.sender.avatar else None,
+                    'created_at': message.created_at.isoformat(),
+                    'message_type': message.message_type,
+                    'file_url': message.file.url if message.file else None,
+                    'file_size': message.file.size if message.file else None,
+                }
             }
         )
         
     except Exception as e:
-        logging.error(f"Async video compression failed for message {message.id}: {e}")
+        logging.error(f"Video compression failed for message {message.id}: {e}")

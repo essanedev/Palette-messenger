@@ -113,13 +113,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'is_typing': event['is_typing']
             }))
 
-    async def file_compressed(self, event):
-        print(f"Файл сжат: message_id={event['message_id']}")
+    async def message_updated(self, event):
+        print(f"Message updated: {event['message']['id']}")
         await self.send(text_data=json.dumps({
-            'type': 'file_compressed',
-            'message_id': event['message_id'],
-            'file_url': event['file_url'],
-            'file_size': event['file_size']
+            'type': 'message_updated',
+            'message': event['message']
         }))
 
     @database_sync_to_async

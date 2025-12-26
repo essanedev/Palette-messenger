@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from apps.chats.models import Message
-from apps.chats.utils import compress_image, compress_video_preview_async, get_file_type
+from apps.chats.utils import compress_image, compress_video_preview, get_file_type
 import os
 import logging
 import shutil

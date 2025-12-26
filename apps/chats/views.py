@@ -9,10 +9,9 @@ from asgiref.sync import async_to_sync
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 import os
-import threading
 from .models import Chat, Message, ChatMembership
 from apps.users.models import User, UserContact
-from .utils import compress_image, validate_file_size, get_file_type, get_readable_size, compress_video_preview_async
+from .utils import compress_image, validate_file_size, get_file_type, get_readable_size, compression_queue
 
 import logging
 
@@ -277,11 +276,7 @@ def upload_file(request, chat_id):
             return JsonResponse({'error': 'Ошибка сохранения видео'}, status=500)
 
         # Start async compression
-        threading.Thread(
-            target=compress_video_preview_async,
-            args=(file, message, 5),
-            daemon=True
-        ).start()
+        compression_queue.put((file, message, 5))
 
         # Skip the general message creation below
         message_created = True
