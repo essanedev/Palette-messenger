@@ -1,0 +1,38 @@
+.profile-edit-form input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.profile-edit-form label[onmouseover] {
+    transition: background 0.2s ease;
+}
+
+body.dark .profile-edit-form input[type="checkbox"] {
+    accent-color: var(--brand-color, #5d5fef);
+}
+
+body.dark .profile-edit-form label[onmouseover]:hover {
+    background: #1a1a1a !important;
+}
+
+body.dark .profile-edit-form textarea,
+body.dark .profile-edit-form input[type="text"] {
+    background: #1a1a1a;
+    border-color: #2a2a2a;
+    color: #ffffff;
+}
+
+body.dark .profile-edit-form small {
+    color: #888888;
+}
+
+@media (max-width: 480px) {
+    .profile-edit-form label[onmouseover] {
+        padding: 12px 8px;
+    }
+
+    .profile-edit-form label[onmouseover] span {
+        font-size: 14px;
+    }
+}
