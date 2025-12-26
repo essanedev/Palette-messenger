@@ -5,6 +5,7 @@ from apps.chats.utils import compress_image, compress_video_preview, get_file_ty
 import os
 import logging
 import shutil
+import concurrent.futures
 import threading
 
 logger = logging.getLogger(__name__)
@@ -45,11 +46,6 @@ class Command(BaseCommand):
             default=5,
             help='Максимальный размер в МБ для сжатых видео (по умолчанию: 5)',
         )
-        parser.add_argument(
-            '--delete-missing',
-            action='store_true',
-            help='Удалить сообщения с файлами, которые не найдены на диске',
-        )
 
     def handle(self, *args, **options):
         dry_run = options['dry_run']
@@ -73,32 +69,29 @@ class Command(BaseCommand):
 
         messages_with_files = Message.objects.exclude(file__isnull=True).exclude(file='')
         self.stdout.write(f'Found {messages_with_files.count()} messages with files in DB')
-        for msg in messages_with_files[:10]:
-            self.stdout.write(f'Message {msg.id}: file.name = {repr(msg.file.name)}, path = {repr(msg.file.path)}')
 
         initial_size = get_dir_size(media_messages_dir)
 
-        compressed_count = 0
-        error_count = 0
-        deleted_count = 0
+        counts = [0, 0]  # compressed, error
+        lock = threading.Lock()
 
-        for filename in files_in_dir:
+        def process_file(filename):
             try:
                 file_path = os.path.join(source_dir, filename)
                 if not os.path.isfile(file_path):
-                    continue
+                    return
 
                 if not recompress:
                     original_file_path = os.path.join(original_dir, filename)
                     if os.path.exists(original_file_path):
                         self.stdout.write(f'Skipping already processed: {filename}')
-                        continue
+                        return
 
                 file_type = get_file_type(filename)
 
                 if file_type not in ['image', 'video']:
                     self.stdout.write(f'Skipping non-compressible file: {filename} (type: {file_type})')
-                    continue
+                    return
 
                 original_size = os.path.getsize(file_path)
 
@@ -106,13 +99,14 @@ class Command(BaseCommand):
 
                 if original_size <= max_size_bytes:
                     self.stdout.write(f'Skipping (already small): {filename} ({original_size / (1024*1024):.2f}MB)')
-                    continue
+                    return
 
                 self.stdout.write(f'Processing {file_type}: {filename} ({original_size / (1024*1024):.2f}MB)')
 
                 if dry_run:
-                    compressed_count += 1
-                    continue
+                    with lock:
+                        counts[0] += 1
+                    return
 
                 if not recompress:
                     os.makedirs(original_dir, exist_ok=True)
@@ -146,11 +140,18 @@ class Command(BaseCommand):
                         f'Compressed: {original_size / (1024*1024):.2f}MB -> {new_size / (1024*1024):.2f}MB'
                     )
                 )
-                compressed_count += 1
+                with lock:
+                    counts[0] += 1
 
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f'Error processing {filename}: {e}'))
-                error_count += 1
+                with lock:
+                    counts[1] += 1
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            executor.map(process_file, files_in_dir)
+
+        compressed_count, error_count = counts
 
         self.stdout.write(self.style.SUCCESS(f'Compression complete: {compressed_count} files compressed, {error_count} errors'))
 
