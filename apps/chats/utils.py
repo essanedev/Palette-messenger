@@ -116,9 +116,10 @@ def compress_video_preview(video_file, max_size_mb=10):
             '-i', temp_input_path,
             '-vcodec', 'libx264',
             '-acodec', 'aac',
-            '-crf', '35',
-            '-preset', 'fast',
+            '-crf', '40',
+            '-preset', 'ultrafast',
             '-b:a', '128k',
+            '-threads', '0',
             '-progress', progress_path,
             '-y', temp_output_path
         ]
