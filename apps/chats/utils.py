@@ -63,7 +63,7 @@ def compress_image(image_file, max_size_mb=15, quality=85):
     )
 
     print(
-        f"Сжатие изображения: {image_file.size / (1024 * 1024):.2f}MB → {compressed_file.size / (1024 * 1024):.2f}MB")
+        f"Сжатие изображения: {image_file.size / (1024 * 1024):.2f}MB -> {compressed_file.size / (1024 * 1024):.2f}MB")
 
     return compressed_file
 

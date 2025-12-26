@@ -398,6 +398,75 @@ body {
 .panel-form {
   display: grid;
   gap: 10px;
+
+/* Dashboard visual sections */
+.profile-page-wrapper .card-body.text-center .dashboard-section {
+  padding: 18px 0;
+  border-bottom: 1px solid #eef2ff;
+}
+.profile-page-wrapper .card-body.text-center .dashboard-section:last-child {
+  border-bottom: none;
+}
+.profile-page-wrapper .card-body.text-center .dashboard-section h2 {
+  margin-bottom: 6px;
+}
+.profile-page-wrapper .card-body.text-center .dashboard-section img {
+  object-fit: cover;
+  border: 4px solid #fff;
+  box-shadow: 0 8px 20px rgba(15,23,42,0.08);
+}
+.profile-page-wrapper .card-body.text-center .quick-actions .btn {
+  padding: 10px 12px;
+  height: 48px;
+  font-weight: 700;
+}
+
+/* Segmented control for Discover (Люди / Группы) */
+.segmented-control{
+  display: flex;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e6eefc;
+  border-radius: 12px;
+  padding: 4px;
+}
+.segmented-control .segmented-item{
+  flex: 1;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 800;
+  color: #475569;
+  transition: all 0.12s ease;
+}
+.segmented-control .segmented-item input{
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.segmented-control .segmented-item span{
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 6px;
+  width: 100%;
+  text-align: center;
+}
+.segmented-control .segmented-item input:checked + span{
+  background: var(--brand-color, #5d5fef);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(93,95,239,0.12);
+}
+.segmented-control .segmented-item input:focus + span{
+  outline: 3px solid rgba(93,95,239,0.12);
+  outline-offset: 2px;
+}
+@media (max-width: 576px){
+  .segmented-control{gap:6px}
+  .segmented-control .segmented-item span{font-size:14px}
+}
 }
 
 .panel-form label {
@@ -447,6 +516,29 @@ body {
 
 .secondary:active {
   transform: translateY(0);
+}
+
+.primary,
+.secondary.primary {
+  flex: 1;
+  background: linear-gradient(135deg, #7c3aed, var(--brand-color, #5d5fef));
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(93, 95, 239, 0.25);
+  border: none;
+  font-weight: 700;
+  padding: 12px 16px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+body.dark .primary,
+body.dark .secondary.primary {
+  box-shadow: 0 8px 18px rgba(93, 95, 239, 0.25);
+  background: linear-gradient(135deg, #7c3aed, var(--brand-color, #5d5fef));
+  color: #ffffff;
 }
 
 .panel-form input:focus,
@@ -1026,4 +1118,506 @@ body.dark .contact {
     transform: scale(0.98);
   }
 }
+/* Profile page — унификация стиля и центрирование */
+.profile-page-wrapper {
+  min-height: calc(100vh - 120px); /* подгоните под высоту шапки */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 12px;
+}
 
+.profile-page-wrapper .col-md-8 {
+  max-width: 780px;
+  width: 100%;
+}
+
+.profile-page-wrapper .card {
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.profile-page-wrapper .card-body {
+  padding: 28px;
+  text-align: center;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+
+.profile-page-wrapper img.rounded-circle {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border: 3px solid #e2e8f0;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.profile-page-wrapper .bg-primary {
+  background: linear-gradient(135deg, #7c3aed, var(--brand-color, #5d5fef));
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(93, 95, 239, 0.12);
+}
+
+.profile-page-wrapper h2 {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.profile-page-wrapper p.text-muted {
+  color: #64748b;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .profile-page-wrapper {
+    min-height: auto;
+    padding: 18px 12px;
+  }
+
+  .profile-page-wrapper .card-body {
+    padding: 20px;
+  }
+
+  .profile-page-wrapper img.rounded-circle {
+    width: 120px;
+    height: 120px;
+  }
+
+  .profile-page-wrapper h2 {
+    font-size: 20px;
+  }
+}
+/* Profile edit — унификация стиля и центрирование */
+.profile-page-wrapper {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 12px;
+}
+
+.profile-page-wrapper .col-md-6,
+.profile-page-wrapper .col-sm-10 {
+  max-width: 720px;
+  width: 100%;
+}
+
+.profile-page-wrapper .card {
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.profile-page-wrapper .card-body {
+  padding: 28px;
+  text-align: center;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+
+.profile-edit-form {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+}
+
+.profile-edit-form .mb-3 {
+  width: 100%;
+  text-align: left;
+}
+
+.profile-edit-form .form-label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #0f172a;
+}
+
+.profile-edit-form input[type="text"],
+.profile-edit-form input[type="email"],
+.profile-edit-form input[type="tel"],
+.profile-edit-form input[type="file"],
+.profile-edit-form textarea,
+.profile-edit-form select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.profile-edit-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.profile-edit-form input:focus,
+.profile-edit-form textarea:focus,
+.profile-edit-form select:focus {
+  border-color: var(--brand-color, #5d5fef);
+  box-shadow: 0 0 0 3px rgba(93, 95, 239, 0.12);
+}
+
+.profile-page-wrapper .btn {
+  max-width: 320px;
+}
+
+@media (max-width: 768px) {
+  .profile-page-wrapper {
+    min-height: auto;
+    padding: 20px 12px;
+  }
+
+  .profile-page-wrapper .card-body {
+    padding: 20px;
+  }
+
+  .profile-edit-form .mb-3 {
+    text-align: left;
+  }
+}
+/* Скрыть стандартный input[type="file"] и стиль для лейбла-заместителя */
+.profile-edit-form input[type="file"],
+.profile-page-wrapper input[type="file"] {
+  display: none;
+}
+
+.input-file-upload-button {
+  display: inline-block;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  width: 100%;
+  box-shadow: 0 8px 18px rgba(93, 95, 239, 0.25);
+  color: #fff;
+  background: linear-gradient(135deg, #7c3aed, var(--brand-color, #5d5fef));
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.input-file-upload-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(93, 95, 239, 0.28);
+}
+
+.input-file-upload-button:active {
+  transform: translateY(0);
+}
+
+/* На маленьких экранах сохранить отступ */
+@media (max-width: 480px) {
+  .input-file-upload-button {
+    padding: 12px;
+    border-radius: 10px;
+  }
+}
+/* Profile data labels & spacing */
+.profile-data {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  justify-content: center;
+  margin-top: 10px;
+  width: 100%;
+  max-width: 760px;
+  box-sizing: border-box;
+  padding: 0 12px;
+}
+
+.profile-label {
+  font-weight: 700;
+  color: #0f172a;
+  min-width: 90px;
+  text-align: right;
+}
+
+.profile-value {
+  color: #64748b;
+  text-align: left;
+  word-break: break-word;
+  max-width: calc(100% - 110px);
+}
+
+/* О себе — значение занимает несколько строк */
+.profile-data.profile-bio .profile-value {
+  display: block;
+}
+
+/* Мобильная адаптация: уменьшить расстояния и сделать лейблы над значением */
+@media (max-width: 576px) {
+  .profile-data {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 0 8px;
+  }
+
+  .profile-label {
+    min-width: auto;
+    text-align: center;
+  }
+
+  .profile-value {
+    text-align: center;
+    max-width: 100%;
+  }
+}
+/* Contacts page — общий стиль и карточки контактов */
+.page-wrapper {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 12px;
+}
+
+.page-card {
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.page-card .card-body {
+  padding: 24px;
+  display: grid;
+  gap: 12px;
+}
+
+/* Заголовок страницы */
+.page-header .page-title {
+  font-weight: 800;
+  font-size: 20px;
+}
+
+/* Список контактов */
+.contacts-list {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+/* Оформление отдельного контакта */
+.contact-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: #fff;
+  transition: box-shadow 0.18s ease, transform 0.12s ease;
+}
+
+.contact-item:hover {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  transform: translateY(-2px);
+}
+
+.contact-blocked {
+  background: linear-gradient(90deg, #fff5f5, #fff7f7);
+  border-color: #fee2e2;
+}
+
+/* Левая часть: аватар + мета */
+.contact-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.contact-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #eaeef7;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+}
+
+.contact-avatar-placeholder {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #7c3aed, var(--brand-color, #5d5fef));
+  color: #fff;
+  font-weight: 800;
+  border: 2px solid rgba(226,232,240,0.6);
+}
+
+.contact-meta {
+  display: grid;
+  gap: 4px;
+}
+
+.contact-name a {
+  color: #0f172a;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.contact-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* Действия справа */
+.contact-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Мелкие подсказки пустого состояния */
+.empty-hint-card {
+  padding: 16px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px dashed #e2e8f0;
+  text-align: center;
+  color: #64748b;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-card .card-body { padding: 18px; }
+  .contact-item { flex-direction: column; align-items: stretch; gap: 10px; text-align: center; }
+  .contact-actions { justify-content: center; width: 100%; flex-wrap: wrap; }
+  .contact-left { justify-content: center; }
+  .contact-meta { align-items: center; }
+}
+/* Search: center + gap and autocomplete dropdown */
+.profile-page-wrapper {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 28px 12px;
+}
+
+.profile-page-wrapper h2 {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.search-autocomplete {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto 12px;
+  position: relative;
+}
+
+/* Centering variant used on search page: form is wrapped with .text-center */
+.text-center .search-autocomplete {
+  display: inline-flex;
+  width: auto;
+  max-width: 920px; /* allow wider search box */
+}
+.text-center .search-autocomplete .input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 640px; /* ensure input appears wider on desktop */
+}
+.text-center .search-autocomplete .input-group input.form-control {
+  flex: 1 1 auto;
+  min-width: 560px; /* main visible width of the text field */
+}
+.text-center .search-autocomplete .form-control,
+.text-center .search-autocomplete .btn {
+  height: 40px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+@media (max-width: 768px) {
+  .text-center .search-autocomplete { display:block; width:100%; }
+  .text-center .search-autocomplete .input-group { min-width: 0; width:100%; }
+  .text-center .search-autocomplete .input-group input.form-control { min-width: 0; }
+}
+
+.search-suggestions {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 6px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 24px rgba(15,23,42,0.06);
+  border-radius: 10px;
+  z-index: 50;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.suggestion-item:hover {
+  background: #f8fafc;
+}
+
+.suggestion-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 40px;
+  border: 2px solid #eef2ff;
+}
+
+.suggestion-text { display: grid; gap: 2px; }
+
+@media (max-width: 768px) {
+  .profile-page-wrapper { padding: 18px 12px; }
+  .search-autocomplete { max-width: 100%; }
+}
+
+/* Ensure content inside the small header block is visually centered */
+.profile-page-wrapper .text-center.mb-3 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Center alerts on the search page and limit their width for readability */
+.profile-page-wrapper .alert.alert-info,
+.profile-page-wrapper .alert.alert-warning {
+  text-align: center;
+  margin: 0 auto;
+  max-width: 720px;
+}

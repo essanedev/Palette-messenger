@@ -13,10 +13,10 @@
   {% if user.is_authenticated %}
   <header class="topbar">
     <button class="menu-toggle" aria-label="Открыть настройки">≡</button>
-    <div class="brand">
+    <a href="{% url 'core:dashboard' %}" class="brand" style="text-decoration: none; color: inherit; display:flex; align-items:center; gap:8px;">
       <img src="{% static 'images/Palette.svg' %}" alt="Palette Logo" class="brand-logo">
       Palette
-    </div>
+    </a>
     <div class="settings-menu" role="menu">
       <div class="settings-user">
         {% if user.avatar %}
@@ -29,7 +29,7 @@
         <div class="settings-username">{{ user.username }}</div>
       </div>
 
-      <button class="settings-item" data-section="profile" role="menuitem">Профиль</button>
+      <a href="{% url 'users:profile' user.username %}" class="settings-item" role="menuitem" style="text-decoration: none; display: block;">Профиль</a>
       <a href="{% url 'chats:list' %}" class="settings-item" role="menuitem" style="text-decoration: none; display: block;">Мои чаты</a>
       <a href="{% url 'users:discover' %}" class="settings-item" role="menuitem" style="text-decoration: none; display: block;">Найти знакомства</a>
       <a href="{% url 'users:contacts' %}" class="settings-item" role="menuitem" style="text-decoration: none; display: block;">Контакты</a>

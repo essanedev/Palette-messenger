@@ -11,10 +11,10 @@
 <body>
   <main class="auth">
     <div class="auth-card">
-      <div class="brand">
+      <a href="{% url 'core:dashboard' %}" class="brand" style="text-decoration: none; color: inherit; display:flex; align-items:center; gap:8px;">
         <img src="{% static 'images/Palette.svg' %}" alt="Palette Logo" class="brand-logo">
         Palette
-      </div>
+      </a>
 
       <div class="switcher">
         <button class="tab" data-target="login" onclick="window.location.href='{% url 'users:login' %}'">Вход</button>
