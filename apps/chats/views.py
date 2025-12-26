@@ -373,24 +373,3 @@ def upload_voice(request, chat_id):
             'created_at': message.created_at.isoformat(),
         }
     })
-
-
-@login_required
-def discover(request):
-    all_users = User.objects.exclude(id=request.user.id)
-
-    all_groups = Chat.objects.filter(chat_type='group')
-
-    existing_chats = Chat.objects.filter(
-        chat_type='private',
-        members=request.user
-    ).values_list('members', flat=True)
-
-    available_users = all_users.exclude(id__in=existing_chats)
-
-    context = {
-        'users': available_users,
-        'groups': all_groups,
-    }
-
-    return render(request, 'chats/discover.html', context)

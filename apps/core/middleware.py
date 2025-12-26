@@ -23,7 +23,7 @@ class AuthRedirectMiddleware:
 
         if path == '/':
             if request.user.is_authenticated:
-                return redirect('chats:discover')
+                return redirect('users:discover')
             else:
                 return redirect('users:login')
 

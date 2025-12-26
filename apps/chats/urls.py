@@ -13,5 +13,4 @@ urlpatterns = [
     path('<int:chat_id>/add-member/', views.add_member_to_group, name='add_member'),
     path('<int:chat_id>/upload-file/', views.upload_file, name='upload_file'),
     path('<int:chat_id>/upload-voice/', views.upload_voice, name='upload_voice'),
-    path('discover/', views.discover, name='discover'),
 ]
