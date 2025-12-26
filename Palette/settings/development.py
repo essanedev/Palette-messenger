@@ -1,10 +1,11 @@
 from .base import *
 import os
+import sys
 
 DEBUG = True
 
-CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS')
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS')
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
  
 DATABASES = {
     'default': {
@@ -33,3 +34,12 @@ CHANNEL_LAYERS = {
 }
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Use lightweight SQLite in-memory database when running tests locally
+# This allows `python manage.py test` on the host machine to run without
+# requiring the Docker Postgres service.
+if 'test' in sys.argv:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:',
+    }

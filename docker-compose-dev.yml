@@ -11,7 +11,7 @@ services:
   palette:
     build: .
     container_name: palette-messenger
-    command: /palette-messenger/entrypoint.dev.sh
+    command: ["sh", "-c", "python manage.py migrate --noinput || echo 'Warning: migrate failed'; python -m daphne -b 0.0.0.0 -p 8000 Palette.asgi:application"]
     depends_on:
       - db
     volumes:
