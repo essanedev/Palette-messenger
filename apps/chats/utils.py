@@ -103,7 +103,7 @@ def compress_video_preview(video_file, max_size_mb=10):
             '-y', temp_output_path
         ]
         logging.info(f"Running FFmpeg command for {video_file.name}")
-        result = subprocess.run(command, check=True, capture_output=True, timeout=300)
+        result = subprocess.run(command, check=True, capture_output=True, timeout=600)  # Increased timeout to 10 minutes
         logging.info(f"FFmpeg completed successfully for {video_file.name}")
 
         # Read and log progress
@@ -113,7 +113,7 @@ def compress_video_preview(video_file, max_size_mb=10):
                 logging.info(f"FFmpeg progress for {video_file.name}: {progress_lines[-1].strip()}")
 
     except subprocess.TimeoutExpired:
-        logging.error(f"FFmpeg compression timed out for {video_file.name} after 300 seconds")
+        logging.error(f"FFmpeg compression timed out for {video_file.name} after 600 seconds")
         os.unlink(temp_input_path)
         os.unlink(temp_output_path)
         os.unlink(progress_path)
@@ -181,10 +181,36 @@ def get_file_type(filename):
     else:
         return 'file'
 
-
 def get_readable_size(size_bytes):
     for unit in ['Б', 'КБ', 'МБ', 'ГБ']:
         if size_bytes < 1024.0:
             return f"{size_bytes:.1f} {unit}"
         size_bytes /= 1024.0
     return f"{size_bytes:.1f} ТБ"
+
+def compress_video_preview_async(video_file, message, max_size_mb=10):
+    # Сжать видео асинхронно и обновить сообщение
+    try:
+        compressed_file = compress_video_preview(video_file, max_size_mb=max_size_mb)
+        
+        message.file = compressed_file
+        message.save(update_fields=['file'])
+        
+        logging.info(f"Async video compression completed for message {message.id}: {video_file.size / (1024 * 1024):.2f}MB -> {compressed_file.size / (1024 * 1024):.2f}MB")
+        
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'chat_{message.chat.id}',
+            {
+                'type': 'file_compressed',
+                'message_id': message.id,
+                'file_url': message.file.url,
+                'file_size': compressed_file.size,
+            }
+        )
+        
+    except Exception as e:
+        logging.error(f"Async video compression failed for message {message.id}: {e}")

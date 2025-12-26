@@ -9,9 +9,10 @@ from asgiref.sync import async_to_sync
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 import os
+import threading
 from .models import Chat, Message, ChatMembership
 from apps.users.models import User, UserContact
-from .utils import compress_image, validate_file_size, get_file_type, get_readable_size, compress_video_preview
+from .utils import compress_image, validate_file_size, get_file_type, get_readable_size, compress_video_preview_async
 
 import logging
 
@@ -235,6 +236,8 @@ def upload_file(request, chat_id):
         f.write(content)
     file = SimpleUploadedFile(name=file.name, content=content, content_type=file.content_type)
 
+    message_created = False
+
     if file_type == 'image':
         valid, error_msg = validate_file_size(file, 15)  # 15MB для фото
         if not valid:
@@ -256,15 +259,32 @@ def upload_file(request, chat_id):
             logger.warning(f"Видео отклонено (размер): {error_msg}")
             return JsonResponse({'error': error_msg}, status=400)
 
-        try:
-            file = compress_video_preview(file, max_size_mb=5)
-            logger.info(f"Видео сжато: {get_readable_size(file.size)}")
-        except Exception as e:
-            logger.error(f"Ошибка сжатия видео: {e}")
-            return JsonResponse({'error': 'Ошибка обработки видео'}, status=500)
-
+        # For videos, create message first with original file, then compress asynchronously
         message_type = 'file'
         logger.info(f"Видео принято: {get_readable_size(file.size)}")
+
+        try:
+            message = Message.objects.create(
+                chat=chat,
+                sender=request.user,
+                message_type=message_type,
+                file=file,
+                content=f"Отправил(а) {file.name}"
+            )
+            logger.info(f"Видео сохранено в БД: message_id={message.id}")
+        except Exception as e:
+            logger.error(f"Ошибка сохранения видео: {e}")
+            return JsonResponse({'error': 'Ошибка сохранения видео'}, status=500)
+
+        # Start async compression
+        threading.Thread(
+            target=compress_video_preview_async,
+            args=(file, message, 5),
+            daemon=True
+        ).start()
+
+        # Skip the general message creation below
+        message_created = True
 
     elif file_type == 'voice':
         valid, error_msg = validate_file_size(file, 10)  # 10MB для аудио
@@ -280,18 +300,19 @@ def upload_file(request, chat_id):
             return JsonResponse({'error': error_msg}, status=400)
         message_type = 'file'
 
-    try:
-        message = Message.objects.create(
-            chat=chat,
-            sender=request.user,
-            message_type=message_type,
-            file=file,
-            content=f"Отправил(а) {file.name}"
-        )
-        logger.info(f"Файл сохранен в БД: message_id={message.id}")
-    except Exception as e:
-        logger.error(f"Ошибка сохранения сообщения: {e}")
-        return JsonResponse({'error': 'Ошибка сохранения файла'}, status=500)
+    if not message_created:
+        try:
+            message = Message.objects.create(
+                chat=chat,
+                sender=request.user,
+                message_type=message_type,
+                file=file,
+                content=f"Отправил(а) {file.name}"
+            )
+            logger.info(f"Файл сохранен в БД: message_id={message.id}")
+        except Exception as e:
+            logger.error(f"Ошибка сохранения сообщения: {e}")
+            return JsonResponse({'error': 'Ошибка сохранения файла'}, status=500)
 
     try:
         channel_layer = get_channel_layer()

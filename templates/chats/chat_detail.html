@@ -259,6 +259,8 @@
                 📎 <span>{{ message.content }}</span>
               </a>
             {% endif %}
+          {% else %}
+            {{ message.content }}
           {% endif %}
         </div>
         <div class="time">{{ message.created_at|date:"H:i" }}</div>

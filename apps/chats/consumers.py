@@ -113,6 +113,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'is_typing': event['is_typing']
             }))
 
+    async def file_compressed(self, event):
+        print(f"Файл сжат: message_id={event['message_id']}")
+        await self.send(text_data=json.dumps({
+            'type': 'file_compressed',
+            'message_id': event['message_id'],
+            'file_url': event['file_url'],
+            'file_size': event['file_size']
+        }))
+
     @database_sync_to_async
     def check_chat_access(self):
         try:
