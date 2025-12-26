@@ -1,0 +1,19 @@
+/* Стили для страницы discover */
+/* На ПК делаем sidebar шире */
+@media (min-width: 481px) {
+  .layout {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px 24px 24px;
+  }
+
+  .layout .sidebar {
+    max-width: 450px;
+    width: 450px;
+    min-width: 380px;
+    flex-shrink: 0;
+  }
+}
+
+/* Мобильные стили остаются без изменений (наследуются из main.css) */
+
