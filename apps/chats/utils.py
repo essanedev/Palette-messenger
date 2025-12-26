@@ -4,11 +4,9 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 import os
 import subprocess
 import tempfile
-import logging
 
 
 def compress_image(image_file, max_size_mb=15, quality=85):
-    logging.info(f"Starting image compression for {image_file.name}, original size: {image_file.size / (1024 * 1024):.2f}MB")
     max_size_bytes = max_size_mb * 1024 * 1024
 
     img = Image.open(image_file)
@@ -61,8 +59,8 @@ def compress_image(image_file, max_size_mb=15, quality=85):
         None
     )
 
-    logging.info(
-        f"Image compression completed for {image_file.name}: {image_file.size / (1024 * 1024):.2f}MB -> {compressed_file.size / (1024 * 1024):.2f}MB")
+    print(
+        f"Сжатие изображения: {image_file.size / (1024 * 1024):.2f}MB -> {compressed_file.size / (1024 * 1024):.2f}MB")
 
     return compressed_file
 
@@ -74,7 +72,6 @@ def compress_video_preview(video_file, max_size_mb=10):
         return video_file
 
     original_size = video_file.size / (1024 * 1024)
-    logging.info(f"Starting video compression for {video_file.name}, original size: {original_size:.2f}MB")
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(video_file.name)[1]) as temp_input:
         for chunk in video_file.chunks():
@@ -85,11 +82,6 @@ def compress_video_preview(video_file, max_size_mb=10):
     temp_output.close()
     temp_output_path = temp_output.name
 
-    # Create a temp file for FFmpeg progress
-    progress_file = tempfile.NamedTemporaryFile(delete=False, suffix='.log')
-    progress_file.close()
-    progress_path = progress_file.name
-
     try:
         command = [
             'ffmpeg',
@@ -99,36 +91,18 @@ def compress_video_preview(video_file, max_size_mb=10):
             '-crf', '35',
             '-preset', 'fast',
             '-b:a', '128k',
-            '-progress', progress_path,
             '-y', temp_output_path
         ]
-        logging.info(f"Running FFmpeg command for {video_file.name}")
-        result = subprocess.run(command, check=True, capture_output=True, timeout=300)
-        logging.info(f"FFmpeg completed successfully for {video_file.name}")
-
-        # Read and log progress
-        with open(progress_path, 'r') as pf:
-            progress_lines = pf.readlines()
-            if progress_lines:
-                logging.info(f"FFmpeg progress for {video_file.name}: {progress_lines[-1].strip()}")
-
-    except subprocess.TimeoutExpired:
-        logging.error(f"FFmpeg compression timed out for {video_file.name} after 300 seconds")
-        os.unlink(temp_input_path)
-        os.unlink(temp_output_path)
-        os.unlink(progress_path)
-        return video_file
+        subprocess.run(command, check=True, capture_output=True)
     except subprocess.CalledProcessError as e:
-        logging.error(f"FFmpeg error for {video_file.name}: {e.stderr.decode()}")
+        print(f"FFmpeg error: {e.stderr.decode()}")
         os.unlink(temp_input_path)
         os.unlink(temp_output_path)
-        os.unlink(progress_path)
         return video_file
     except FileNotFoundError:
-        logging.error("FFmpeg not found. Please install FFmpeg and ensure it is available in PATH.")
+        print("FFmpeg не найден. Пожалуйста, установите FFmpeg и убедитесь, что он доступен в PATH.")
         os.unlink(temp_input_path)
         os.unlink(temp_output_path)
-        os.unlink(progress_path)
         return video_file
 
     with open(temp_output_path, 'rb') as f:
@@ -138,7 +112,6 @@ def compress_video_preview(video_file, max_size_mb=10):
 
     os.unlink(temp_input_path)
     os.unlink(temp_output_path)
-    os.unlink(progress_path)
 
     output = BytesIO(compressed_data)
     compressed_file = InMemoryUploadedFile(
@@ -150,7 +123,7 @@ def compress_video_preview(video_file, max_size_mb=10):
         None
     )
 
-    logging.info(f"Video compression completed for {video_file.name}: {original_size:.2f}MB -> {compressed_size:.2f}MB")
+    print(f"Сжатие видео: {original_size:.2f}MB -> {compressed_size:.2f}MB")
 
     return compressed_file
 
