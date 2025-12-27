@@ -32,7 +32,6 @@ def chats_list(request):
     }
     return render(request, 'chats/chats_list.html', context)
 
-
 @login_required
 def chat_detail(request, chat_id):
     chat = get_object_or_404(Chat, id=chat_id)
@@ -84,17 +83,19 @@ def create_private_chat(request, username):
     django_messages.success(request, f'Чат с {other_user.username} создан')
     return redirect('chats:detail', chat_id=chat.id)
 
-
 @login_required
 def create_group(request):
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         description = request.POST.get('description', '').strip()
         member_ids = request.POST.getlist('members')
-        tags_str = request.POST.get('tags_input', '')
 
         if not name:
             django_messages.error(request, 'Название группы обязательно')
+            return redirect('chats:create_group')
+
+        if len(name) > 100:
+            django_messages.error(request, 'Название группы слишком длинное (максимум 100 символов)')
             return redirect('chats:create_group')
 
         group = Chat.objects.create(
@@ -103,16 +104,6 @@ def create_group(request):
             chat_type='group'
         )
 
-        if tags_str:
-            tag_names = [t.strip().lstrip('#').lower() for t in tags_str.replace(',', ' ').split() if t.strip()]
-
-            tag_objs = []
-            for t_name in tag_names:
-                tag, created = Tag.objects.get_or_create(name=t_name)
-                tag_objs.append(tag)
-
-            group.tags.set(tag_objs)
-
         ChatMembership.objects.create(
             chat=group,
             user=request.user,
@@ -120,23 +111,26 @@ def create_group(request):
         )
 
         if member_ids:
-            user_contacts = UserContact.objects.filter(
-                owner=request.user
-            ).values_list('contact_id', flat=True)
+            try:
+                user_contacts = UserContact.objects.filter(
+                    user=request.user
+                ).values_list('contact_id', flat=True)
 
-            valid_member_ids = [
-                int(mid) for mid in member_ids
-                if mid.isdigit() and int(mid) in user_contacts
-            ]
+                valid_member_ids = [
+                    int(mid) for mid in member_ids
+                    if mid.isdigit() and int(mid) in user_contacts
+                ]
 
-            if valid_member_ids:
-                members = User.objects.filter(id__in=valid_member_ids)
-                for member in members:
-                    ChatMembership.objects.create(
-                        chat=group,
-                        user=member,
-                        role='member'
-                    )
+                if valid_member_ids:
+                    members = User.objects.filter(id__in=valid_member_ids)
+                    for member in members:
+                        ChatMembership.objects.create(
+                            chat=group,
+                            user=member,
+                            role='member'
+                        )
+            except Exception as e:
+                print(f"Ошибка добавления участников: {e}")
 
         Message.objects.create(
             chat=group,
@@ -148,10 +142,17 @@ def create_group(request):
         django_messages.success(request, f'Группа "{name}" успешно создана!')
         return redirect('chats:detail', chat_id=group.id)
 
-    contacts = UserContact.objects.filter(owner=request.user).select_related('contact')
+    try:
+        contacts = UserContact.objects.filter(user=request.user).select_related('contact')
+    except Exception:
+        contacts = []
 
-    return render(request, 'chats/create_group.html', {'contacts': contacts})
+    context = {
+        'user': request.user,
+        'contacts': contacts,
+    }
 
+    return render(request, 'chats/create_group.html', context)
 
 @login_required
 def search_groups(request):
@@ -172,8 +173,8 @@ def search_groups(request):
 
 
 @login_required
-def join_group(request, group_id):
-    chat = get_object_or_404(Chat, id=group_id, chat_type='group')
+def join_group(request, chat_id):
+    chat = get_object_or_404(Chat, id=chat_id, chat_type='group')
 
     if chat.members.filter(id=request.user.id).exists():
         django_messages.info(request, 'Вы уже участник этой группы')

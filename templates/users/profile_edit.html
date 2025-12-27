@@ -36,12 +36,7 @@
                         <label class="form-label">О себе</label>
                         {{ form.bio }}
                     </div>
-                    <label>
-                        <span>Теги</span>
-                        <input type="text" name="tags_input" placeholder="#тег1 #тег2"
-                               value="{% for tag in user.tags.all %}#{{ tag.name }} {% endfor %}">
-                        <small>Вводите через пробел с #</small>
-                    </label>
+
                     <div class="mb-3">
                         <label class="form-label">Аватар</label>
                         {{ form.avatar }}

@@ -324,6 +324,14 @@
   const progressBar = document.getElementById('progress-bar');
   const progressText = document.getElementById('progress-text');
 
+  console.log('Все элементы найдены:', {
+    chatId,
+    currentUser,
+    messageInput: !!messageInput,
+    sendBtn: !!sendBtn,
+    messagesContainer: !!messagesContainer
+  });
+
   const scrollToBottom = () => {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   };
@@ -396,16 +404,53 @@
 
   const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsUrl = wsProtocol + '//' + window.location.host + '/ws/chat/' + chatId + '/';
-  let chatSocket = new WebSocket(wsUrl);
 
-  chatSocket.onopen = () => { connectionStatus.textContent = ''; };
-  chatSocket.onclose = () => { connectionStatus.textContent = 'Соединение потеряно'; };
-  chatSocket.onmessage = (e) => {
+  console.log('Подключаемся к WebSocket:', wsUrl);
+  connectionStatus.textContent = 'Подключение...';
+  connectionStatus.style.color = '#f59e0b';
+
+  let chatSocket;
+
+  try {
+    chatSocket = new WebSocket(wsUrl);
+    console.log('✓ WebSocket объект создан');
+  } catch (error) {
+    console.error('Ошибка создания WebSocket:', error);
+    connectionStatus.textContent = 'Ошибка WebSocket';
+    connectionStatus.style.color = '#ef4444';
+  }
+
+  chatSocket.onopen = function(e) {
+    console.log('WebSocket ПОДКЛЮЧЕН!', e);
+    connectionStatus.textContent = 'Подключено';
+    connectionStatus.style.color = '#10b981';
+    setTimeout(() => {
+      connectionStatus.textContent = '';
+    }, 2000);
+  };
+
+  chatSocket.onmessage = function(e) {
     const data = JSON.parse(e.data);
+    console.log('Получено через WebSocket:', data);
+
+    if (data.type === 'connection_established') {
+      console.log('✓ Соединение подтверждено сервером');
+      return;
+    }
+
+    if (data.type === 'error') {
+      console.error('Ошибка от сервера:', data.message);
+      alert('Ошибка: ' + data.message);
+      return;
+    }
+
     if (data.type === 'chat_message') {
       const message = data.message;
       const isCurrentUser = message.sender === currentUser;
-      if (emptyHint) emptyHint.remove();
+
+      if (emptyHint) {
+        emptyHint.remove();
+      }
 
       const messageDiv = document.createElement('div');
       messageDiv.className = 'message ' + (isCurrentUser ? 'outgoing' : 'incoming');
@@ -460,26 +505,84 @@
 
       messageDiv.innerHTML = `
         <div class="bubble">
-          ${!isCurrentUser ? `<strong>${message.sender}</strong><br>` : ''}
+          ${!isCurrentUser ? '<strong style="display: block; margin-bottom: 4px; font-size: 12px; opacity: 0.8;">' + message.sender + '</strong>' : ''}
           ${contentHTML}
         </div>
-        <div class="time">${new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+        <div class="time">${new Date(message.created_at).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}</div>
       `;
+
       messagesContainer.appendChild(messageDiv);
       scrollToBottom();
     }
   };
 
+  chatSocket.onerror = function(error) {
+    console.error('WebSocket ERROR:', error);
+    connectionStatus.textContent = 'Ошибка соединения';
+    connectionStatus.style.color = '#ef4444';
+  };
+
+  chatSocket.onclose = function(e) {
+    console.log('WebSocket CLOSED:', e.code, e.reason);
+    connectionStatus.textContent = 'Соединение потеряно';
+    connectionStatus.style.color = '#f59e0b';
+  };
+
+  // Функция отправки сообщения
   const sendMessage = () => {
+    console.log('sendMessage вызвана');
+
     const message = messageInput.value.trim();
-    if (message && chatSocket.readyState === WebSocket.OPEN) {
-      chatSocket.send(JSON.stringify({'type': 'chat_message', 'message': message}));
+    console.log('Содержимое поля ввода:', message);
+
+    if (!message) {
+      console.log('Сообщение пустое');
+      return;
+    }
+
+    if (chatSocket.readyState !== WebSocket.OPEN) {
+      console.error('WebSocket не подключен. ReadyState:', chatSocket.readyState);
+      alert('Нет соединения с сервером. Обновите страницу.');
+      return;
+    }
+
+    try {
+      const payload = JSON.stringify({
+        'type': 'chat_message',
+        'message': message
+      });
+      console.log('📡 Отправляем через WebSocket:', payload);
+      chatSocket.send(payload);
       messageInput.value = '';
+      console.log('Сообщение отправлено');
+    } catch (error) {
+      console.error('Ошибка отправки:', error);
+      alert('Ошибка отправки сообщения');
     }
   };
 
-  sendBtn.onclick = sendMessage;
-  messageInput.onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
+  messageForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    sendMessage();
+    return false;
+  });
+
+  sendBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    sendMessage();
+  });
+
+  messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  scrollToBottom();
+  messageInput.focus();
 
   let mediaRecorder;
   let recordedChunks = [];
@@ -487,106 +590,237 @@
   let longPressTimer = null;
   let recordingStartTime;
   let recordingTimerInterval;
+  const LONG_PRESS_MS = 500;
+
+  const applyIcon = () => {
+    const mode = voiceBtn.dataset.mode;
+    voiceBtn.textContent = mode === 'voice' ? '🎙' : '📷';
+  };
+
+  const toggleMode = () => {
+    if (isRecording) return;
+    const nextMode = voiceBtn.dataset.mode === 'voice' ? 'video' : 'voice';
+    voiceBtn.dataset.mode = nextMode;
+    applyIcon();
+    console.log('Режим переключен на:', nextMode);
+  };
+
+  const updateRecordingTime = () => {
+    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    recordingTime.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
 
   const startRecording = async () => {
-    if (isRecording) return;
+    console.log('Начинаем запись...');
     try {
-      const isVideoMode = voiceBtn.dataset.mode === 'video';
-      const constraints = { audio: true, video: isVideoMode ? { width: 480, height: 480 } : false };
+      const constraints = {
+        audio: true,
+        video: voiceBtn.dataset.mode === 'video'
+      };
+
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-      let mimeType = isVideoMode ? 'video/webm;codecs=vp8,opus' : 'audio/webm;codecs=opus';
-      if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = isVideoMode ? 'video/webm' : 'audio/webm';
-
+      const mimeType = voiceBtn.dataset.mode === 'video' ? 'video/webm' : 'audio/webm';
       mediaRecorder = new MediaRecorder(stream, { mimeType });
       recordedChunks = [];
-      const modeAtStart = isVideoMode;
 
-      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          recordedChunks.push(event.data);
+        }
+      };
+
       mediaRecorder.onstop = async () => {
         const blob = new Blob(recordedChunks, { type: mimeType });
-        if (blob.size > 0) await uploadMedia(blob, modeAtStart);
-        stream.getTracks().forEach(t => t.stop());
+        console.log('Запись остановлена, размер:', blob.size);
+        await uploadVoiceMessage(blob, voiceBtn.dataset.mode === 'video');
+        stream.getTracks().forEach(track => track.stop());
       };
 
       mediaRecorder.start();
       isRecording = true;
       recordingStartTime = Date.now();
+
       voiceBtn.classList.add('recording');
-      voiceBtn.textContent = '🛑';
+      voiceBtn.textContent = '●';
       recordingIndicator.style.display = 'block';
-      recordingTimerInterval = setInterval(() => {
-        const sec = Math.floor((Date.now() - recordingStartTime) / 1000);
-        recordingTime.textContent = `${Math.floor(sec/60)}:${(sec%60).toString().padStart(2, '0')}`;
-      }, 1000);
-    } catch (err) { alert('Доступ к медиа запрещен'); }
+
+      recordingTimerInterval = setInterval(updateRecordingTime, 1000);
+      console.log('Запись началась');
+    } catch (error) {
+      console.error('Ошибка доступа к медиа:', error);
+      alert('Не удалось получить доступ к микрофону/камере');
+    }
   };
 
   const stopRecording = () => {
-    if (isRecording && mediaRecorder.state !== 'inactive') {
-      mediaRecorder.stop();
-      isRecording = false;
-      voiceBtn.classList.remove('recording');
-      voiceBtn.textContent = voiceBtn.dataset.mode === 'voice' ? '🎙' : '📷';
-      recordingIndicator.style.display = 'none';
-      clearInterval(recordingTimerInterval);
-    }
+    if (!isRecording || !mediaRecorder) return;
+
+    console.log('Останавливаем запись...');
+    mediaRecorder.stop();
+    isRecording = false;
+
+    voiceBtn.classList.remove('recording');
+    applyIcon();
+    recordingIndicator.style.display = 'none';
+
+    clearInterval(recordingTimerInterval);
   };
 
-  async function uploadMedia(blob, isVideo) {
+  const uploadVoiceMessage = async (blob, isVideo) => {
+    console.log('Загрузка голосового сообщения...');
     const formData = new FormData();
     formData.append('audio', blob, isVideo ? 'video.webm' : 'audio.webm');
-    formData.append('is_video', isVideo ? 'true' : 'false');
+    formData.append('is_video', isVideo);
 
     uploadProgress.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressText.textContent = '0%';
+
     try {
-      const response = await fetch(`/chats/${chatId}/upload-voice/`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
-        body: formData
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          progressBar.style.width = percent + '%';
+          progressText.textContent = percent + '%';
+        }
       });
-      if (!response.ok) throw new Error('Ошибка сервера');
-    } catch (err) {
-      alert('Ошибка загрузки');
-    } finally {
+
+      xhr.addEventListener('load', () => {
+        uploadProgress.style.display = 'none';
+        if (xhr.status === 200) {
+          console.log('Голосовое сообщение загружено');
+        } else {
+          console.error('Ошибка загрузки:', xhr.status, xhr.responseText);
+          alert('Ошибка загрузки: ' + xhr.responseText);
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        uploadProgress.style.display = 'none';
+        console.error('Ошибка сети при загрузке');
+        alert('Ошибка сети при загрузке');
+      });
+
+      xhr.open('POST', `/chats/${chatId}/upload-voice/`);
+      xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+      xhr.send(formData);
+
+    } catch (error) {
       uploadProgress.style.display = 'none';
+      console.error('Ошибка загрузки:', error);
+      alert('Ошибка загрузки голосового сообщения');
     }
-  }
+  };
 
   const pressStart = (e) => {
-    if(e.type === 'touchstart') e.preventDefault();
-    longPressTimer = setTimeout(startRecording, 500);
-  };
-  const pressEnd = () => {
+    e.preventDefault();
     clearTimeout(longPressTimer);
-    if (isRecording) stopRecording();
+    longPressTimer = setTimeout(() => {
+      startRecording();
+    }, LONG_PRESS_MS);
   };
 
-  voiceBtn.onmousedown = pressStart;
-  window.onmouseup = pressEnd;
-  voiceBtn.ontouchstart = pressStart;
-  voiceBtn.ontouchend = pressEnd;
-  voiceBtn.onclick = () => { if(!isRecording) {
-    voiceBtn.dataset.mode = voiceBtn.dataset.mode === 'voice' ? 'video' : 'voice';
-    voiceBtn.textContent = voiceBtn.dataset.mode === 'voice' ? '🎙' : '📷';
-  }};
+  const pressEnd = (e) => {
+    e.preventDefault();
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    if (isRecording) {
+      stopRecording();
+    }
+  };
 
-  attachBtn.onclick = () => fileInput.click();
-  fileInput.onchange = async (e) => {
+  voiceBtn.addEventListener('mousedown', pressStart);
+  voiceBtn.addEventListener('touchstart', pressStart, { passive: false });
+  voiceBtn.addEventListener('mouseup', pressEnd);
+  voiceBtn.addEventListener('mouseleave', pressEnd);
+  voiceBtn.addEventListener('touchend', pressEnd, { passive: false });
+  voiceBtn.addEventListener('touchcancel', pressEnd);
+
+  voiceBtn.addEventListener('click', (e) => {
+    if (isRecording) {
+      e.preventDefault();
+      return;
+    }
+    toggleMode();
+  });
+
+  attachBtn.addEventListener('click', () => {
+    console.log('📎 Открываем выбор файла...');
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    console.log('Файл выбран:', file.name, file.type, file.size);
+
+    const maxSizeMB = file.type.startsWith('image/') ? 15 : (file.type.startsWith('video/') ? 100 : 50);
+    const fileSizeMB = file.size / (1024 * 1024);
+
+    if (fileSizeMB > maxSizeMB) {
+      alert(`Файл слишком большой! Максимум ${maxSizeMB}МБ`);
+      fileInput.value = '';
+      return;
+    }
+
     const formData = new FormData();
     formData.append('file', file);
-    uploadProgress.style.display = 'block';
-    await fetch(`/chats/${chatId}/upload-file/`, {
-      method: 'POST',
-      headers: { 'X-CSRFToken': '{{ csrf_token }}' },
-      body: formData
-    });
-    uploadProgress.style.display = 'none';
-    fileInput.value = '';
-  };
 
-  scrollToBottom();
+    uploadProgress.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressText.textContent = 'Загрузка... 0%';
+
+    try {
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          progressBar.style.width = percent + '%';
+          progressText.textContent = `Загрузка... ${percent}%`;
+        }
+      });
+
+      xhr.addEventListener('load', () => {
+        uploadProgress.style.display = 'none';
+        if (xhr.status === 200) {
+          console.log('Файл загружен');
+        } else {
+          console.error('Ошибка загрузки:', xhr.status, xhr.responseText);
+          try {
+            const error = JSON.parse(xhr.responseText);
+            alert('Ошибка: ' + (error.error || 'Неизвестная ошибка'));
+          } catch {
+            alert('Ошибка загрузки файла');
+          }
+        }
+        fileInput.value = '';
+      });
+
+      xhr.addEventListener('error', () => {
+        uploadProgress.style.display = 'none';
+        console.error('Ошибка сети при загрузке');
+        alert('Ошибка сети при загрузке');
+        fileInput.value = '';
+      });
+
+      xhr.open('POST', `/chats/${chatId}/upload-file/`);
+      xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+      xhr.send(formData);
+
+    } catch (error) {
+      uploadProgress.style.display = 'none';
+      console.error('Ошибка загрузки:', error);
+      alert('Ошибка загрузки файла');
+      fileInput.value = '';
+    }
+  });
+
+  console.log('Скрипт чата загружен');
 </script>
 {% endblock %}
