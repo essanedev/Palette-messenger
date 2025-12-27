@@ -1,10 +1,6 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block title %}{{ profile_user.username }} - Профиль{% endblock %}
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/profile.css' %}">
-{% endblock %}
 
 {% block content %}
 <div class="row profile-page-wrapper">
@@ -14,17 +10,18 @@
                 {% if profile_user.avatar %}
                     <img src="{{ profile_user.avatar.url }}" class="rounded-circle mb-3" width="150" height="150" alt="Avatar">
                 {% else %}
-                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 avatar-fallback-lg">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 150px; height: 150px; font-size: 60px;">
                         {{ profile_user.username|first|upper }}
                     </div>
                 {% endif %}
 
-                <h2 style="color: #000 !important;">{{ profile_user.username }}</h2>
+                <h2>{{ profile_user.username }}</h2>
 
                 {% if profile_user.is_online %}
-                    <span class="badge bg-success mb-2" style="color: #000 !important;">онлайн</span>
+                    <span class="badge bg-success mb-2">онлайн</span>
                 {% else %}
-                    <span class="badge bg-secondary mb-2" style="color: #000 !important;">оффлайн</span>
+                    <span class="badge bg-secondary mb-2">оффлайн</span>
                 {% endif %}
 
                 {% if profile_user.full_name %}

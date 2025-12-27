@@ -7,7 +7,6 @@
   <meta name="mobile-web-app-capable" content="yes">
   <title>Palette — вход</title>
   <link rel="stylesheet" href="{% static 'css/auth.css' %}">
-  <link rel="stylesheet" href="{% static 'css/login.css' %}">
 </head>
 <body>
   <main class="auth">
@@ -26,7 +25,7 @@
         {% csrf_token %}
 
         {% if form.errors %}
-          <div class="form-error">
+          <div style="background: #fee2e2; padding: 12px; border-radius: 10px; color: #991b1b; font-weight: 600;">
             Неверное имя пользователя или пароль
           </div>
         {% endif %}
