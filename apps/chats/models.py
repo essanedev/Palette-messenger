@@ -20,6 +20,7 @@ class Chat(TimeStampedModel):
     )
     avatar = models.ImageField('Аватар группы', upload_to='chat_avatars/', blank=True, null=True)
     description = models.TextField('Описание', blank=True)
+    tags = models.ManyToManyField('users.Tag', related_name='chats', blank=True, verbose_name='Теги')
 
     class Meta:
         verbose_name = 'Чат'
@@ -47,6 +48,7 @@ class Chat(TimeStampedModel):
                 return self.messages.filter(is_deleted=False).exclude(sender=user).count()
         except ChatMembership.DoesNotExist:
             return 0
+
 
 class ChatMembership(TimeStampedModel):
     ROLES = (

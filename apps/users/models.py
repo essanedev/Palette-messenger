@@ -3,6 +3,19 @@ from django.db import models
 from apps.core.models import TimeStampedModel
 from apps.chats.utils import compress_image
 
+
+class Tag(TimeStampedModel):
+    name = models.CharField('Название тега', max_length=50, unique=True)
+
+    class Meta:
+        verbose_name = 'Тег'
+        verbose_name_plural = 'Теги'
+        ordering = ['name']
+
+    def __str__(self):
+        return f"#{self.name}"
+
+
 class User(AbstractUser):
     email = models.EmailField('Email', unique=True)
     avatar = models.ImageField('Аватар', upload_to='avatars/', blank=True, null=True)
@@ -10,6 +23,7 @@ class User(AbstractUser):
     phone = models.CharField('Телефон', max_length=20, blank=True)
     is_online = models.BooleanField('Онлайн', default=False)
     last_seen = models.DateTimeField('Последний визит', null=True, blank=True)
+    tags = models.ManyToManyField(Tag, related_name='users', blank=True, verbose_name='Теги')
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email']
@@ -31,7 +45,7 @@ class User(AbstractUser):
                             old_user = User.objects.get(pk=self.pk)
                             if old_user.avatar != self.avatar:
                                 self.avatar = compress_image(self.avatar, max_size_mb=2, quality=90)
-                                print(f"Аватарка пользователя {self.username} обновелна")
+                                print(f"Аватарка пользователя {self.username} обновлена")
                         except User.DoesNotExist:
                             pass
                 except Exception as e:
