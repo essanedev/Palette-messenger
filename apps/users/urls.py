@@ -16,4 +16,5 @@ urlpatterns = [
     path('profile-edit/', views.profile_edit, name='profile_edit'),
     path('discover/', views.discover, name='discover'),
     path('autocomplete/', views.autocomplete_users, name='autocomplete'),
+    path('tags/', views.manage_tags, name='manage_tags'),
 ]
